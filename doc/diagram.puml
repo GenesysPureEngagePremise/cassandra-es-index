@@ -1,0 +1,35 @@
+@startuml
+
+package "Client" {
+  [CQLDriver]
+}
+
+database "Cassandra" {
+  frame "KeySpace" {
+    [Table]
+    [EsSecondaryIndex]
+	[ElasticIndex]
+    folder "server/cassandra" {
+    	[SSTables]
+   }
+  }
+}
+
+database "Elasticsearch" {
+  frame "server/api" {
+	[Index]
+  }
+}
+note left of EsSecondaryIndex : is an implementation of org.apache.cassandra.index.Index
+note right of ElasticIndex: hosts a Jest (Elastic) REST Client
+
+
+[CQLDriver] --> [Table] : CQL query: select * from table where ESQuery='subject:probl* OR text:probl*'
+[Table] --> [EsSecondaryIndex] : request
+[EsSecondaryIndex] --> [ElasticIndex] : ES requests
+
+[Table] --> [SSTables] : modify/load
+[ElasticIndex] -> [Index] : upsert/search
+
+
+@enduml

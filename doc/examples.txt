@@ -1,0 +1,54 @@
+CREATE KEYSPACE genesys
+  WITH REPLICATION = { 
+   'class' : 'SimpleStrategy', 
+   'replication_factor' : 1 
+  };
+  
+CREATE TABLE emails (
+   id UUID PRIMARY KEY, 
+   subject text, 
+   body text,
+   userid int,
+   query text
+);  
+
+CREATE CUSTOM INDEX ON emails(query) 
+USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
+WITH OPTIONS = {'unicast-hosts': 'localhost:9200'};
+
+INSERT INTO emails (id, subject, body, userid)
+VALUES (904b88b2-9c61-4539-952e-c179a3805b22, 'Hello world', 'Cassandra is great, but it''s even better with EsIndex and Elasticsearch', 42);
+
+
+select id, subject, body, userid, query  from emails where query='body:cassandra';
+
+ id                                   | subject     | body                                                                    | userid | query
+--------------------------------------+-------------+-------------------------------------------------------------------------+--------+-------
+ 904b88b2-9c61-4539-952e-c179a3805b22 | Hello world | Cassandra is great, but it's even better with EsIndex and Elasticsearch |     42 | 
+ {
+	"_index": "genesys_emails_index@",
+	"_type": "emails",
+	"_id": "904b88b2-9c61-4539-952e-c179a3805b22",
+	"_score": 0.24257512,
+	"_source": {
+		"id": "904b88b2-9c61-4539-952e-c179a3805b22"
+	},
+	"took": 4,
+	"timed_out": false,
+	"_shards": {
+		"total": 5,
+		"successful": 5,
+		"failed": 0
+	},
+	"hits": {
+		"total": 1,
+		"max_score": 0.24257512
+	}
+}
+
+(1 rows)
+
+CREATE CUSTOM INDEX ON emails(query) 
+USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
+WITH OPTIONS = {'unicast-hosts': 'localhost:9200', 'mapping-emails': '{ "emails": {"date_detection": false,"numeric_detection": false,"properties": {"id": {"type": "keyword"},"userid": {"type": "long"},"subject" : {"type" : "text","fields" : {"keyword" : {"type" : "keyword","ignore_above" : 256}}},"body" : {"type" : "text"},"IndexationDate": {"type": "date","format": "yyyy-MM-dd''T''HH:mm:ss.SSS''Z''"},"_cassandraTtl": {"type": "long"}}}}'};
+

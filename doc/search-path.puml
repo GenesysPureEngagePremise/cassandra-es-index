@@ -1,0 +1,20 @@
+@startuml
+
+title Search path
+
+
+CQL -> Cassandra: select * from table where IDX = 'firstname:jacques OR firstname:jack'
+Cassandra -> EsSecondaryIndex: search(ReadCommand)
+EsSecondaryIndex -> ElasticIndex: search()
+ElasticIndex -> ElasticSearch: client.prepareSearch().execute()
+ElasticSearch -> ElasticIndex: List<Id>
+ElasticIndex -> EsSecondaryIndex: StreamingPartitionIterator<Row>
+EsSecondaryIndex -> Cassandra: StreamingPartitionIterator<Row>
+Cassandra -> CQL: StreamingPartitionIterator<Row>
+CQL -> Cassandra: iterate
+Cassandra -> StreamingPartitionIterator: next()
+StreamingPartitionIterator -> Cassandra: Row
+Cassandra -> CQL: Row
+
+
+@enduml

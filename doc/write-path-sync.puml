@@ -1,0 +1,16 @@
+@startuml
+
+title Write path with async=false
+
+CQL -> Cassandra: insert into ...
+Cassandra -> Table: insert()
+Table -> Cassandra: SSTables modified
+Table --> EsSecondaryIndex: index()
+Cassandra -> CQL: inserted
+
+EsSecondaryIndex -> ElasticIndex: index()
+ElasticIndex -> ElasticSearch: client.prepareIndex().execute()
+ElasticSearch --> ElasticIndex: success
+
+
+@enduml
