@@ -446,7 +446,7 @@ purge-period | 60 | Every 60 minutes all empty indexes will be deleted from the 
 per-index-type | true | Prepend the index name with table name. In ES 5.x it is not possible anymore to have a different mapping for the same field name in different types of the same index. In ES 6.x types will be removed.
 force-delete | false | Every minute a "delete by query" request is sent to ES to delete documents that have expired _cassandraTtl. This is to emulate the TTL functionality that was removed in ES 5.x. Note that while Cassandra compaction will actually delete document from ES there is no guarantee on when it will occur. 
 ttl-shift | 0 | Time in seconds to shift Cassandra TTL. If TTL was 1h in Cassandra and shift is 3600 it means document in ES will be deleted 1h later than Cassandra.
-index-manager | com.genesyslab.webme.commons.index.DefaultIndexManager | Index manager class name. Is used to manager segmentation and expiration functionality.
+index-manager | | Index manager class name. Is used to manager segmentation and expiration functionality. Default is com.genesyslab.webme.commons.index.DefaultIndexManager.
 segment-size | 86400000 | Segment time frame in milliseconds. Every "segment-size" milliseconds new index will be created by following template: <alias_name>_index@<yyyyMMdd't'HHmmss'z'>
 max-connections-per-route | 2 | Number of HTTP connection per ES node, default is Apache HTTP pool value, can increase performance of Cassandra index but increase load on ES. (new in WCC 9.0.000.15)
 
