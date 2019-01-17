@@ -44,7 +44,7 @@ Other Cassandra vendors are not tested, ScyllaDB is not supported.
 * EsIndex only uses ES HTTP/S REST interface
 * PERF: Reduced memory footprint as Jest client is much lighter than ES client
 * PERF: Streaming partition iterator load rows as they are requested by the client
-* Per DC/Rack options, it's possible to use different settings in different DC/Rack. Syntax is for option "option-name" is <dcname>.option-name
+* Per DC/Rack options, it's possible to use different settings in different DC/Rack. Syntax is for option "option-name" is \<dcname>.option-name
 * Support for index truncate (truncate table)
 * Support for index rebuild (Nodetool command)
 * Creating a new index on a table with existing data will build the index on that data
@@ -71,20 +71,30 @@ for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart 
 
 ## Upgrade of an existing version
 1. Stop Cassandra node.
-2. Remove old wcc-es-index-9.1.001.<v1>-jar-with-dependencies.jar 
-3. Add new wcc-es-index-9.1.001.<v2>-jar-with-dependencies.jar
+2. Remove old wcc-es-index-9.1.001.\<v1>-jar-with-dependencies.jar 
+3. Add new wcc-es-index-9.1.001.\<v2>-jar-with-dependencies.jar
 4. Start Cassandra node.
 5. Proceed to next node.
 
-#User Guide
+# User Guide
+## Limitations
+
+### Tables with Clustering Keys
+Due to lack of testing, tables with clustering keys are not supported. Only a partition key is supported, composite partition keys should 
+work but were not extensively tested.
+
+### Cell/Column TTL vs Row TTL
+EsIndex only supports row level TTL where all the cells will expire at the same time and corresponding ES document can be deleted at the 
+same time. If a row have cells that expires at different times, the corresponding document will be deleted when the last cell expires. 
+If using different cell TTL, the data returned from a search will still be consistent as data is read from SSTables, but it will still be 
+possible to find the row using expired data using an ES query.   
+
+### Multiple Indexes on the Same Table
+It is possible to create several indexes on the same table, EsIndex will not prevent that. However if more than one EsIndex exists the 
+behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table \<ks.tableName>' can be used to show 
+indexes created on the table and drop them if necessary.
+
 ## Getting Started
-
-**Unsupported Functionality**
-> It is possible to create several indexes on the same table, EsIndex will not prevent that. However if more than one EsIndex exists the 
-> behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table <ks.tableName>' can be used to show 
-> indexes created on the table and drop them if necessary.
-
-
 Let's use below table as an example:
 ```sql
 CREATE TABLE emails (
@@ -95,8 +105,8 @@ CREATE TABLE emails (
    query text
 );  
 ```
-You need to dedicate a dummy text column for index usage. 
-This column must never receive data. In this example, query column is the dummy column.
+You need to dedicate a dummy text column for index usage. This column must never receive data. In this example, query column is the 
+dummy column.
 
 Here is how to create the index for the example table and use **eshost** for Elasticsearch:
 ```sql
@@ -108,7 +118,7 @@ WITH OPTIONS = {'unicast-hosts': 'eshost:9200'};
 Errors returned by CQL are very limited, if something goes wrong, like your Elasticsearch host unavailable 
 you'll get a timeout or another kind of exception. You'll have to check Cassandra logs to understand what went wrong.
 
-We didn't provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
+We did'nt provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
 ```sql
 INSERT INTO emails (id, subject, body, userid)
 VALUES (904b88b2-9c61-4539-952e-c179a3805b22, 'Hello world', 'Cassandra is great, but it''s even better with EsIndex and Elasticsearch', 42);
@@ -210,9 +220,9 @@ select id, subject, body, userid, query  from emails where query='body:cassan*';
 
 The EsIndex plugin added two fields:
 * IndexationDate is the date of the last update of the document
-* _cassandraTtl is the epoch time when row will be TTLed (in 2038 by default)
+* _cassandraTtl is the epoch time when row will be TTLed (in 19 years by default)
 
-We can see that the mapping looks fine, but Elasticsearch didn't notice that userId is an integer and added fields[keyword] to all text.  
+We can see that the mapping looks fine, but Elasticsearch did'nt notice that userId is an integer and added fields[keyword] to all text.  
 Here is how the data looks like in Elasticsearch:
 
 
@@ -304,7 +314,7 @@ Here is the resulting ES mapping:
 }
 ```
 
-Now that mapping is properly defined, we can search userid as a number. In this example we're using Elasticsearch query DSL:
+Now that mapping is properly defined, we can search _userid_ as a number. In this example we're using Elasticsearch query DSL:
 ```sql
 select id, subject, body, userid from emails where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
 
@@ -314,7 +324,8 @@ select id, subject, body, userid from emails where query='{"query":{"range":{"us
 ```
 
 It is very important to get the mapping right before starting production. Reindexing a large table will take a lot of time and will put 
-significant load on Cassandra and Elasticsearch.
+significant load on Cassandra and Elasticsearch. You'll need to check Cassandra logs for errors in your ES mapping. Make sure to escape
+single quotes (') by doubling them in the JSON options provided to the CREATE INDEX command.
 
 ## Index Configuration
 Below are all options related to the configuration of ElasticSearch index.
@@ -327,14 +338,19 @@ Note that all below options are specific to Genesys implementation and not Elast
 **If Jest classes are not found, DUMMY mode is enabled and no other cases applies.**
 
 
-### Multi-Datacenter support
-All options can now be prefixed by Datacenter and Rack to make those settings location specific, for example:
+### Multi-Datacenter Support
+Multi-Datacenter is supported and data is replicated via Cassandra gossip replication only. ES clusters on different DCs are not the same
+and should never be joined together or performance will be impacted. Since data is replicated at the table level, EsIndex will get an
+update in each DC and local ES Cluster will be updated as well.
 
-* option-name : applies to all Cassandra nodes
-* <paris>.option-name : applies to all Cassandra nodes running in the "paris" DC.
-* <paris.rack1>.option-name : applies to all Cassandra nodes running in the "paris" DC and rack1.
+![Replication](doc/dc-replication.png)
 
-### Support for authentication
+To support multi-DC, all options can be prefixed by Datacenter and Rack name to make settings location specific, for example:
+* **option-name**: applies to all Cassandra nodes
+* **\<paris>.option-name**: applies to all Cassandra nodes running in the "paris" DC.
+* **\<paris.rack1>.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
+
+### Support for Authentication
 To provide Cassandra index for Elasticsearch with credentials, each node must have the environment variable **ESCREDENTIALS** correctly set 
 before starting. This must be set on all Cassandra hosts.
 
@@ -350,7 +366,7 @@ all Cassandra nodes must be restarted with the updated environment variable valu
 ### Support for HTTPS
 In the index options set
 
-unicast-hosts = **https**://<host name>:9200
+unicast-hosts = **https**://\<host name>:9200
 It is currently not possible to migrate an existing index from http to https, usage of one or another must be decided before 
 you create the Cassandra schema. In order to ease HTTPS deployment, the index will automatically trust all HTTPS certificates.
 
@@ -402,7 +418,7 @@ CREATE CUSTOM INDEX on email(query) using 'com.genesyslab.webme.commons.index.Es
 #### Setting options using environment variables or system properties
 You can also set or override options using environment variables or Java system properties by prefixing options with 'genesys-es-'.
 
-* **genesys-es-<option-name>** Default values can be set at host level using environment variables or system properties
+* **genesys-es-\<option-name>** Default values can be set at host level using environment variables or system properties
 * **genesys-es-unicast-hosts** For example, this allows to control ES host names on DB side so that client don't have to know ES host names
 
 #### Setting options using a file
@@ -425,7 +441,7 @@ insert-only | false	 | By default ESIndex will use upsert operations. In insert 
 async-write | true	 | Sends index updates asynchronously without checking for correct execution. This provides much faster writes but data may become inconsistent if ES cluster is not available, because writes won't fail. Default is true.
 segment | OFF | OFF, HOUR, DAY, MONTH, YEAR, CUSTOM Automatic index segmentation is controlled by this setting. If set to DAY, every day a new index will be created under the alias. Note that empty indexes are deleted automatically every hour. Note: HOUR setting is discouraged as it will create many indexes and may decrease performance. This setting is advised for development and testing purposes.
 segment-name | | If segment=CUSTOM this value will be used for the new index creation.
-mapping-<type> | {} | For each secondary index, the table name is passed as a type, for example mapping-visit={json definition}.
+mapping-\<type> | {} | For each secondary index, the table name is passed as a type, for example mapping-visit={json definition}.
 unicast-hosts | http://localhost:9200 | A comma separated list of host, can be host1,host2,host3 or http://host1,http://host2,http://host3 or http://host1:9200,http://host2:9200,http://host3:9200. If protocol or port are missing http and 9200 assumed. It is possible to use https.
 discard-nulls | **true** | Do not pass null values to ES index, it means you won't be able to delete a value. **Default is true**.
 index-properties | {} | Properties as a JSON string, passed to create a new index, may contain tokenizer definitions for example.
@@ -438,7 +454,7 @@ skip-log-replay | true | When a Cassandra nodes starts it will replay the commit
 skip-non-local-updates | true | To improve performance enabling this setting will only execute index updates on the master replica of the token range.
 es-analytic-mode	 | false  | Disables deletes (TTL or delete from) of the ES documents.
 type-pipelines	 |  | List of type to setup pipelines.
-pipeline-<type>	 |  | Pipeline definition for this type.
+pipeline-\<type>	 |  | Pipeline definition for this type.
 index.translog.durability | async | When creating an index we use async commit mode to ensure best performance, it was the default setting in ES 1.7. Since 2.x it's sync resulting in serious performance degradation.
 available-while-rebuilding | true | When creating a new index it is possible (or not) to run searches on the partial index.
 truncate-rebuild | false | Truncate ES index before rebuilding.
@@ -489,7 +505,7 @@ Possible values:
 * **com.genesyslab.webme.commons.index.DefaultIndexManager** - document-based expiration and discrete date-based segmentation (see segment option) 
 * **com.genesyslab.webme.commons.index.IndexDropManager** - index-based expiration and timeframe based segmentation (see segment-size option)
 
-###### mapping-<type>
+###### mapping-\<type>
 See ElasticSerarch documentation for details on type mapping:
 
 http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping.html
