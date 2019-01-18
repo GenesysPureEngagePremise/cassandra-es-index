@@ -7,7 +7,7 @@
 
     <groupId>com.genesyslab.webme.commons</groupId>
     <artifactId>wcc-es-index</artifactId>
-    <version>9.1.001.02</version>
+    <version>9.1.002.00-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>wcc-es-index</name>
 
@@ -44,6 +44,8 @@
         <version.maven.compiler.plugin>3.7.0</version.maven.compiler.plugin>
         <version.maven.surefire.plugin>2.20</version.maven.surefire.plugin>
         <version.maven.assembly.plugin>3.1.0</version.maven.assembly.plugin>
+        <version.maven.site.plugin>3.7.1</version.maven.site.plugin> <!-- WARN: project-info 3.0 is not compatible with site 3.7.1 -->
+        <version.maven.project.info.reports.plugin>2.9</version.maven.project.info.reports.plugin>
 
         <!-- Assembly -->
         <jar-destination>../distribution/target/lib4cassandra</jar-destination>
@@ -163,6 +165,16 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${version.maven.site.plugin}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>${version.maven.project.info.reports.plugin}</version>
             </plugin>
         </plugins>
     </build>
