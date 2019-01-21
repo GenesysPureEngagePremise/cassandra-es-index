@@ -1,0 +1,10 @@
+#Organize Import Order
+#Thu Dec 17 16:42:52 CET 2015
+6=java
+5=javax
+4=
+3=org
+2=com
+1=com.genesyslab
+0=com.genesys
+7=\#
