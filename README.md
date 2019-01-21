@@ -23,6 +23,16 @@ Tested versions are Elasticsearch 5.x, 6.x and Cassandra 3.11.x. However the plu
 Other versions of Apache Cassandra like 3.0, 2.2 or 4.0 are not supported as the secondary index interface used by the plugin is different.
 Other Cassandra vendors are not tested, ScyllaDB is not supported.
 
+| Versions | Elasticsearch 1.x | Elasticsearch 2.x | Elasticsearch 5.x | Elasticsearch  6.x |
+|---|---|---|---|---|
+| Cassandra 2.x | No | No | No | No |
+| Cassandra 3.x  | No | No | No | No |
+| Cassandra 3.11.x  |  Limited | Limited | Yes | Yes |
+| Cassandra 4.x  | No | No | No | No |
+
+* **No**: Plugin can't work due to different Cassandra interface.
+* **Yes**: Plugin works without problem.
+* **Limited**: Plugin should work but testing is limited.
 
 # Changes
 ## Version 9.1.001
@@ -786,10 +796,17 @@ This is an example of what happens when searching:
 
 ![Search Path](doc/search-path.png)
 
-This is an example of synchronous write, Cassandra operation will fail if ES fails:
+
+This is an example of synchronous write, (Cassandra operation will fail if ES fails):
 
 ![Write Path sync](doc/write-path-sync.png)
 
-This is an example of asynchronous write, Cassandra operation will **not** fail if ES fails:
+
+This is an example of asynchronous write:
 
 ![Write Path async](doc/write-path-async.png)
+
+
+This is an example of asynchronous write, Cassandra operation will **not** fail if ES fails:
+
+![Write Path async](doc/write-path-async-fail.png)

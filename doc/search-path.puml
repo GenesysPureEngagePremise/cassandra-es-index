@@ -16,5 +16,4 @@ Cassandra -> StreamingPartitionIterator: next()
 StreamingPartitionIterator -> Cassandra: Row
 Cassandra -> CQL: Row
 
-
 @enduml
