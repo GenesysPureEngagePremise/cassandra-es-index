@@ -57,7 +57,7 @@ Other Cassandra vendors are not tested, ScyllaDB is not supported.
 * EsIndex will no longer request attributes that are not needed to load the Cassandra rows
 * The only way to configure the index is by using options provided in the create index command or using the special update command
 
-#Distribution
+# Distribution
 
 ## Building from sources
 This project requires Maven and compiles with Java 8. To build the plugin, at the root of the project execute:
@@ -66,7 +66,7 @@ This project requires Maven and compiles with Java 8. To build the plugin, at th
 This will build a "all in one jar' in ../distribution/target/lib4cassandra
 
 ## Installing the plugin in Cassandra
-Put wcc-es-index-9.1.000.xx-jar-with-dependencies.jar in the lib folder of Cassandra along with other Cassandra jars, 
+Put `wcc-es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars, 
 for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart you Cassandra node(s).
 
 ## Upgrade of an existing version
@@ -76,7 +76,7 @@ for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart 
 4. Start Cassandra node.
 5. Proceed to next node.
 
-#User Guide
+# User Guide
 ## Getting Started
 
 **Unsupported Functionality**
@@ -84,10 +84,14 @@ for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart 
 > behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table <ks.tableName>' can be used to show 
 > indexes created on the table and drop them if necessary.
 
+For sake of simplicity, create this keyspace first:
+```
+CREATE KEYSPACE genesys WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+```
 
 Let's use below table as an example:
-```sql
-CREATE TABLE emails (
+```
+CREATE TABLE genesys.emails (
    id UUID PRIMARY KEY, 
    subject text, 
    body text,
@@ -96,27 +100,36 @@ CREATE TABLE emails (
 );  
 ```
 You need to dedicate a dummy text column for index usage. 
-This column must never receive data. In this example, query column is the dummy column.
+This column must never receive data. In this example, `query` column is the dummy column.
 
 Here is how to create the index for the example table and use **eshost** for Elasticsearch:
-```sql
-CREATE CUSTOM INDEX ON emails(query) 
+```
+CREATE CUSTOM INDEX ON genesys.emails(query) 
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
 WITH OPTIONS = {'unicast-hosts': 'eshost:9200'};
 ```
+
+For example, if your Elasticsearch server is listening on `localhost`, replace **eshost** with **localhost**. 
 
 Errors returned by CQL are very limited, if something goes wrong, like your Elasticsearch host unavailable 
 you'll get a timeout or another kind of exception. You'll have to check Cassandra logs to understand what went wrong.
 
 We didn't provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
-```sql
-INSERT INTO emails (id, subject, body, userid)
+```
+INSERT INTO genesys.emails (id, subject, body, userid)
 VALUES (904b88b2-9c61-4539-952e-c179a3805b22, 'Hello world', 'Cassandra is great, but it''s even better with EsIndex and Elasticsearch', 42);
+```
+
+You can see that index is being created in Elasticsearch if you have the access to logs:
+
+```
+[o.e.c.m.MetaDataCreateIndexService] [node-1] [genesys_emails_index@] creating index, cause [api], templates [], shards [5]/[1], mappings []
+[INFO ][o.e.c.m.MetaDataMappingService] [node-1] [genesys_emails_index@/waSGrPvkQvyQoUEiwqKN3w] create_mapping [emails]
 ```
 
 Now we can search Cassandra using Elasticsearch via the index, here is a Lucene syntax search:
 
-```sql
+```
 select id, subject, body, userid, query  from emails where query='body:cassan*';
 
  id                                   | subject     | body                                                                    | userid | query
@@ -252,12 +265,12 @@ Here is how the data looks like in Elasticsearch:
 ```
 
 Let's fix the mapping by dropping the index:
-`drop index emails_query_idx;`
+`drop index genesys.emails_query_idx;`
 This will also drop Elasticsearch index AND data!
 
 and recreate it with a proper mapping:
-```sql
-CREATE CUSTOM INDEX ON emails(query) 
+```
+CREATE CUSTOM INDEX ON genesys.emails(query) 
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
 WITH OPTIONS = {'unicast-hosts': 'localhost:9200', 'mapping-emails': '{ "emails": {"date_detection": false,"numeric_detection": false,"properties": {"id": {"type": "keyword"},"userid": {"type": "long"},"subject" : {"type" : "text","fields" : {"keyword" : {"type" : "keyword","ignore_above" : 256}}},"body" : {"type" : "text"},"IndexationDate": {"type": "date","format": "yyyy-MM-dd''T''HH:mm:ss.SSS''Z''"},"_cassandraTtl": {"type": "long"}}}}'};
 ```
@@ -305,12 +318,16 @@ Here is the resulting ES mapping:
 ```
 
 Now that mapping is properly defined, we can search userid as a number. In this example we're using Elasticsearch query DSL:
-```sql
-select id, subject, body, userid from emails where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
+```
+select id, subject, body, userid from genesys.emails 
+where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
 
- id                                   | subject     | body                                                                    | userid
---------------------------------------+-------------+-------------------------------------------------------------------------+--------
- 904b88b2-9c61-4539-952e-c179a3805b22 | Hello world | Cassandra is great, but it's even better with EsIndex and Elasticsearch |     42
+@ Row 1
+---------+-------------------------------------------------------------------------
+ id      | 904b88b2-9c61-4539-952e-c179a3805b22
+ subject | Hello world
+ body    | Cassandra is great, but it's even better with EsIndex and Elasticsearch
+ userid  | 42
 ```
 
 It is very important to get the mapping right before starting production. Reindexing a large table will take a lot of time and will put 
@@ -322,6 +339,7 @@ Key names can use hyphen '-' char, or dots. For example both names will work:
 
 * async.write
 * async-write
+
 Note that all below options are specific to Genesys implementation and not Elasticsearch itself.
 
 **If Jest classes are not found, DUMMY mode is enabled and no other cases applies.**
@@ -368,8 +386,8 @@ When creating the index you will be providing index options, as well as Elastics
 
 #### Setting options using CREATE CUSTOM INDEX
 Index options should be specified at index creation, here is an example
-```sql
-CREATE CUSTOM INDEX on email(query) using 'com.genesyslab.webme.commons.index.EsSecondaryIndex' WITH options =
+```
+CREATE CUSTOM INDEX on genesys.email(query) using 'com.genesyslab.webme.commons.index.EsSecondaryIndex' WITH options =
 {
    'read-consistency-level':'QUORUM',
    'insert-only':'false',
@@ -459,19 +477,19 @@ You should turn off date detection in your mapping definition.
 The following JSON:
 ```json
 {
- "maps": {
-	 "key1": "value",
-	 "key2": 42,
-	 "keymap": {
-	 	"sss1": null,
-	 	"sss2": 42,
-	 	"sss0": "ffff"
-	 },
- "plap": "plop"
- },
- "string": "string",
- "int": 42,
- "plplpl": [1,2,3,4]
+     "maps": {
+	     "key1": "value",
+	     "key2": 42,
+	     "keymap": {
+	         "sss1": null,
+	 	     "sss2": 42,
+	 	     "sss0": "ffff"
+	     },
+         "plap": "plop"
+     },
+     "string": "string",
+     "int": 42,
+     "plplpl": [1,2,3,4]
 }
 ```
 Will be converted into:
@@ -506,7 +524,7 @@ With ESIndex it is different, since index search is based on ElasticSearch, each
 It means that query must only be sent to a single node or result will contain duplicates. This is achieved by forcing a 
 token to the CQL query like below.
 
-```sql
+```
 select * from emails where query='subject:12345' and token(id)=0;
 ```
 
@@ -529,7 +547,7 @@ If matched row count is high and rows are large, the searches may end in read ti
 metadata and then load rows in parallel from your code using CQL queries.
 
 In order to tell the index to return PKs only you need to use the below query hint #options:load-rows=false#:
-```sql
+```
 select * from emails where query='#options:load-rows=false#id:ab*';
 ```
 It is important to note that rows returned are fake and build from the results of Elasicsearch query. It means that returned rows may not exist any more:
@@ -541,7 +559,7 @@ It is important to note that rows returned are fake and build from the results o
 ### Elasticsearch Metadata
 hen a search request returns a result, the first row will contain the Elasticsearch metadata as## a JSON string in the column of the index. 
 See for example:
-```sql
+```
 cqlsh:ucs> select id,query from emails where query='id:00008RD9PrJMMmpr';
 
  id               | query
@@ -569,7 +587,7 @@ ESIndex supports CQL tracing, it can be enabled on a node or using CQLSH with be
 
 **Tracing selects**
 Then you'll get traces from from the whole query against all participating nodes:
-```sql
+```
 cqlsh:ucs> select * from "Contact" where "ESQuery"='AttributeValues.LastName:ab*' and token("Id")=0 limit 1;
 
 Id | AttributeValues | AttributeValuesDate | Attributes| CreatedDate | ESQuery | ExpirationDate | MergeIds | ModifiedDate| PrimaryAttributes| Segment| TenantId
@@ -665,7 +683,7 @@ All activities starting by ESI are activities from ESIndex:
 ```
 
 **Tracing updates/inserts/deletes**
-```sql
+```
 cqlsh:ucs> update "Contact" set "CreatedDate"='2017-04-01T11:21:59.001+0000' where "Id"='1001uiP2niJPJGBa';
 ```
 
