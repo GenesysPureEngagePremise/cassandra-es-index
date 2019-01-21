@@ -57,16 +57,16 @@ Other Cassandra vendors are not tested, ScyllaDB is not supported.
 * EsIndex will no longer request attributes that are not needed to load the Cassandra rows
 * The only way to configure the index is by using options provided in the create index command or using the special update command
 
-#Distribution
+# Distribution
 
 ## Building from sources
 This project requires Maven and compiles with Java 8. To build the plugin, at the root of the project execute:
 > mvn clean package
 
-This will build a "all in one jar' in ../distribution/target/lib4cassandra
+This will build a "all in one jar' in `target/distribution/lib4cassandra`
 
 ## Installing the plugin in Cassandra
-Put wcc-es-index-9.1.000.xx-jar-with-dependencies.jar in the lib folder of Cassandra along with other Cassandra jars, 
+Put `wcc-es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars, 
 for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart you Cassandra node(s).
 
 ## Upgrade of an existing version
@@ -77,6 +77,7 @@ for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart 
 5. Proceed to next node.
 
 # User Guide
+
 ## Limitations
 
 ### Tables with Clustering Keys
@@ -94,10 +95,15 @@ It is possible to create several indexes on the same table, EsIndex will not pre
 behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table \<ks.tableName>' can be used to show 
 indexes created on the table and drop them if necessary.
 
+For sake of simplicity, create this keyspace first:
+```
+CREATE KEYSPACE genesys WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+```
+
 ## Getting Started
 Let's use below table as an example:
-```sql
-CREATE TABLE emails (
+```
+CREATE TABLE genesys.emails (
    id UUID PRIMARY KEY, 
    subject text, 
    body text,
@@ -105,28 +111,38 @@ CREATE TABLE emails (
    query text
 );  
 ```
-You need to dedicate a dummy text column for index usage. This column must never receive data. In this example, query column is the 
-dummy column.
+
+You need to dedicate a dummy text column for index usage. 
+This column must never receive data. In this example, `query` column is the dummy column.
 
 Here is how to create the index for the example table and use **eshost** for Elasticsearch:
-```sql
-CREATE CUSTOM INDEX ON emails(query) 
+```
+CREATE CUSTOM INDEX ON genesys.emails(query) 
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
 WITH OPTIONS = {'unicast-hosts': 'eshost:9200'};
 ```
 
+For example, if your Elasticsearch server is listening on `localhost`, replace **eshost** with **localhost**. 
+
 Errors returned by CQL are very limited, if something goes wrong, like your Elasticsearch host unavailable 
 you'll get a timeout or another kind of exception. You'll have to check Cassandra logs to understand what went wrong.
 
-We did'nt provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
-```sql
-INSERT INTO emails (id, subject, body, userid)
+We didn't provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
+```
+INSERT INTO genesys.emails (id, subject, body, userid)
 VALUES (904b88b2-9c61-4539-952e-c179a3805b22, 'Hello world', 'Cassandra is great, but it''s even better with EsIndex and Elasticsearch', 42);
+```
+
+You can see that index is being created in Elasticsearch if you have the access to logs:
+
+```
+[o.e.c.m.MetaDataCreateIndexService] [node-1] [genesys_emails_index@] creating index, cause [api], templates [], shards [5]/[1], mappings []
+[INFO ][o.e.c.m.MetaDataMappingService] [node-1] [genesys_emails_index@/waSGrPvkQvyQoUEiwqKN3w] create_mapping [emails]
 ```
 
 Now we can search Cassandra using Elasticsearch via the index, here is a Lucene syntax search:
 
-```sql
+```
 select id, subject, body, userid, query  from emails where query='body:cassan*';
 
  id                                   | subject     | body                                                                    | userid | query
@@ -222,7 +238,7 @@ The EsIndex plugin added two fields:
 * IndexationDate is the date of the last update of the document
 * _cassandraTtl is the epoch time when row will be TTLed (in 19 years by default)
 
-We can see that the mapping looks fine, but Elasticsearch did'nt notice that userId is an integer and added fields[keyword] to all text.  
+We can see that the mapping looks fine, but Elasticsearch didn't notice that userId is an integer and added fields[keyword] to all text.  
 Here is how the data looks like in Elasticsearch:
 
 
@@ -262,14 +278,50 @@ Here is how the data looks like in Elasticsearch:
 ```
 
 Let's fix the mapping by dropping the index:
-`drop index emails_query_idx;`
+`drop index genesys.emails_query_idx;`
 This will also drop Elasticsearch index AND data!
 
 and recreate it with a proper mapping:
-```sql
-CREATE CUSTOM INDEX ON emails(query) 
+```
+CREATE CUSTOM INDEX ON genesys.emails(query) 
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
-WITH OPTIONS = {'unicast-hosts': 'localhost:9200', 'mapping-emails': '{ "emails": {"date_detection": false,"numeric_detection": false,"properties": {"id": {"type": "keyword"},"userid": {"type": "long"},"subject" : {"type" : "text","fields" : {"keyword" : {"type" : "keyword","ignore_above" : 256}}},"body" : {"type" : "text"},"IndexationDate": {"type": "date","format": "yyyy-MM-dd''T''HH:mm:ss.SSS''Z''"},"_cassandraTtl": {"type": "long"}}}}'};
+WITH OPTIONS = {
+    'unicast-hosts': 'localhost:9200',
+    'mapping-emails': '
+        {
+           "emails":{
+              "date_detection":false,
+              "numeric_detection":false,
+              "properties":{
+                 "id":{
+                    "type":"keyword"
+                 },
+                 "userid":{
+                    "type":"long"
+                 },
+                 "subject":{
+                    "type":"text",
+                    "fields":{
+                       "keyword":{
+                          "type":"keyword",
+                          "ignore_above":256
+                       }
+                    }
+                 },
+                 "body":{
+                    "type":"text"
+                 },
+                 "IndexationDate":{
+                    "type":"date",
+                    "format":"yyyy-MM-dd''T''HH:mm:ss.SSS''Z''"
+                 },
+                 "_cassandraTtl":{
+                    "type":"long"
+                 }
+              }
+           }
+        }
+    '};
 ```
 This will create a new index will provided mapping and reindex the data that is in Cassandra.
 
@@ -315,12 +367,16 @@ Here is the resulting ES mapping:
 ```
 
 Now that mapping is properly defined, we can search _userid_ as a number. In this example we're using Elasticsearch query DSL:
-```sql
-select id, subject, body, userid from emails where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
+```
+select id, subject, body, userid from genesys.emails 
+where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
 
- id                                   | subject     | body                                                                    | userid
---------------------------------------+-------------+-------------------------------------------------------------------------+--------
- 904b88b2-9c61-4539-952e-c179a3805b22 | Hello world | Cassandra is great, but it's even better with EsIndex and Elasticsearch |     42
+@ Row 1
+---------+-------------------------------------------------------------------------
+ id      | 904b88b2-9c61-4539-952e-c179a3805b22
+ subject | Hello world
+ body    | Cassandra is great, but it's even better with EsIndex and Elasticsearch
+ userid  | 42
 ```
 
 It is very important to get the mapping right before starting production. Reindexing a large table will take a lot of time and will put 
@@ -333,6 +389,7 @@ Key names can use hyphen '-' char, or dots. For example both names will work:
 
 * async.write
 * async-write
+
 Note that all below options are specific to Genesys implementation and not Elasticsearch itself.
 
 **If Jest classes are not found, DUMMY mode is enabled and no other cases applies.**
@@ -347,8 +404,8 @@ update in each DC and local ES Cluster will be updated as well.
 
 To support multi-DC, all options can be prefixed by Datacenter and Rack name to make settings location specific, for example:
 * **option-name**: applies to all Cassandra nodes
-* **\<paris>.option-name**: applies to all Cassandra nodes running in the "paris" DC.
-* **\<paris.rack1>.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
+* **<paris>.option-name**: applies to all Cassandra nodes running in the "paris" DC.
+* **<paris.rack1>.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
 
 ### Support for Authentication
 To provide Cassandra index for Elasticsearch with credentials, each node must have the environment variable **ESCREDENTIALS** correctly set 
@@ -366,7 +423,8 @@ all Cassandra nodes must be restarted with the updated environment variable valu
 ### Support for HTTPS
 In the index options set
 
-unicast-hosts = **https**://\<host name>:9200
+unicast-hosts = **https**:`//<host name>:9200`
+
 It is currently not possible to migrate an existing index from http to https, usage of one or another must be decided before 
 you create the Cassandra schema. In order to ease HTTPS deployment, the index will automatically trust all HTTPS certificates.
 
@@ -384,8 +442,8 @@ When creating the index you will be providing index options, as well as Elastics
 
 #### Setting options using CREATE CUSTOM INDEX
 Index options should be specified at index creation, here is an example
-```sql
-CREATE CUSTOM INDEX on email(query) using 'com.genesyslab.webme.commons.index.EsSecondaryIndex' WITH options =
+```
+CREATE CUSTOM INDEX on genesys.email(query) using 'com.genesyslab.webme.commons.index.EsSecondaryIndex' WITH options =
 {
    'read-consistency-level':'QUORUM',
    'insert-only':'false',
@@ -418,7 +476,7 @@ CREATE CUSTOM INDEX on email(query) using 'com.genesyslab.webme.commons.index.Es
 #### Setting options using environment variables or system properties
 You can also set or override options using environment variables or Java system properties by prefixing options with 'genesys-es-'.
 
-* **genesys-es-\<option-name>** Default values can be set at host level using environment variables or system properties
+* **genesys-es-<option-name>** Default values can be set at host level using environment variables or system properties
 * **genesys-es-unicast-hosts** For example, this allows to control ES host names on DB side so that client don't have to know ES host names
 
 #### Setting options using a file
@@ -453,8 +511,8 @@ concurrent-lock | true | Locks index executions on partition id. This prevents c
 skip-log-replay | true | When a Cassandra nodes starts it will replay the commit log, those updates are skipped to improve startup time as they have already be applied to ES.
 skip-non-local-updates | true | To improve performance enabling this setting will only execute index updates on the master replica of the token range.
 es-analytic-mode	 | false  | Disables deletes (TTL or delete from) of the ES documents.
-type-pipelines	 |  | List of type to setup pipelines.
-pipeline-\<type>	 |  | Pipeline definition for this type.
+type-pipelines	 | none | List of type to setup pipelines.
+pipeline-\<type>	 | none | Pipeline definition for this type.
 index.translog.durability | async | When creating an index we use async commit mode to ensure best performance, it was the default setting in ES 1.7. Since 2.x it's sync resulting in serious performance degradation.
 available-while-rebuilding | true | When creating a new index it is possible (or not) to run searches on the partial index.
 truncate-rebuild | false | Truncate ES index before rebuilding.
@@ -462,7 +520,7 @@ purge-period | 60 | Every 60 minutes all empty indexes will be deleted from the 
 per-index-type | true | Prepend the index name with table name. In ES 5.x it is not possible anymore to have a different mapping for the same field name in different types of the same index. In ES 6.x types will be removed.
 force-delete | false | Every minute a "delete by query" request is sent to ES to delete documents that have expired _cassandraTtl. This is to emulate the TTL functionality that was removed in ES 5.x. Note that while Cassandra compaction will actually delete document from ES there is no guarantee on when it will occur. 
 ttl-shift | 0 | Time in seconds to shift Cassandra TTL. If TTL was 1h in Cassandra and shift is 3600 it means document in ES will be deleted 1h later than Cassandra.
-index-manager | | Index manager class name. Is used to manager segmentation and expiration functionality. Default is com.genesyslab.webme.commons.index.DefaultIndexManager.
+index-manager | com.genesyslab.webme.commons.index.DefaultIndexManager| Index manager class name. Is used to manager segmentation and expiration functionality.
 segment-size | 86400000 | Segment time frame in milliseconds. Every "segment-size" milliseconds new index will be created by following template: <alias_name>_index@<yyyyMMdd't'HHmmss'z'>
 max-connections-per-route | 2 | Number of HTTP connection per ES node, default is Apache HTTP pool value, can increase performance of Cassandra index but increase load on ES. (new in WCC 9.0.000.15)
 
@@ -475,19 +533,19 @@ You should turn off date detection in your mapping definition.
 The following JSON:
 ```json
 {
- "maps": {
-	 "key1": "value",
-	 "key2": 42,
-	 "keymap": {
-	 	"sss1": null,
-	 	"sss2": 42,
-	 	"sss0": "ffff"
-	 },
- "plap": "plop"
- },
- "string": "string",
- "int": 42,
- "plplpl": [1,2,3,4]
+     "maps": {
+	     "key1": "value",
+	     "key2": 42,
+	     "keymap": {
+	         "sss1": null,
+	 	     "sss2": 42,
+	 	     "sss0": "ffff"
+	     },
+         "plap": "plop"
+     },
+     "string": "string",
+     "int": 42,
+     "plplpl": [1,2,3,4]
 }
 ```
 Will be converted into:
@@ -505,13 +563,13 @@ Possible values:
 * **com.genesyslab.webme.commons.index.DefaultIndexManager** - document-based expiration and discrete date-based segmentation (see segment option) 
 * **com.genesyslab.webme.commons.index.IndexDropManager** - index-based expiration and timeframe based segmentation (see segment-size option)
 
-###### mapping-\<type>
+###### mapping-`<type>`
 See ElasticSerarch documentation for details on type mapping:
 
 http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping.html
 
-
 ## Index Search Queries
+
 It is a custom implementation of a Cassandra Index. This introduces some limitations tied to Cassandra consistency model. 
 The main limitation is due to the nature of Cassandra secondary indexes, each Cassandra node only contains data it is responsible 
 within the Cassandra ring, with secondary indexes it's the same thing, each node only indexes its local data. 
@@ -522,7 +580,7 @@ With ESIndex it is different, since index search is based on ElasticSearch, each
 It means that query must only be sent to a single node or result will contain duplicates. This is achieved by forcing a 
 token to the CQL query like below.
 
-```sql
+```
 select * from emails where query='subject:12345' and token(id)=0;
 ```
 
@@ -545,7 +603,7 @@ If matched row count is high and rows are large, the searches may end in read ti
 metadata and then load rows in parallel from your code using CQL queries.
 
 In order to tell the index to return PKs only you need to use the below query hint #options:load-rows=false#:
-```sql
+```
 select * from emails where query='#options:load-rows=false#id:ab*';
 ```
 It is important to note that rows returned are fake and build from the results of Elasicsearch query. It means that returned rows may not exist any more:
@@ -557,7 +615,7 @@ It is important to note that rows returned are fake and build from the results o
 ### Elasticsearch Metadata
 hen a search request returns a result, the first row will contain the Elasticsearch metadata as## a JSON string in the column of the index. 
 See for example:
-```sql
+```
 cqlsh:ucs> select id,query from emails where query='id:00008RD9PrJMMmpr';
 
  id               | query
@@ -585,7 +643,7 @@ ESIndex supports CQL tracing, it can be enabled on a node or using CQLSH with be
 
 **Tracing selects**
 Then you'll get traces from from the whole query against all participating nodes:
-```sql
+```
 cqlsh:ucs> select * from "Contact" where "ESQuery"='AttributeValues.LastName:ab*' and token("Id")=0 limit 1;
 
 Id | AttributeValues | AttributeValuesDate | Attributes| CreatedDate | ESQuery | ExpirationDate | MergeIds | ModifiedDate| PrimaryAttributes| Segment| TenantId
@@ -681,7 +739,7 @@ All activities starting by ESI are activities from ESIndex:
 ```
 
 **Tracing updates/inserts/deletes**
-```sql
+```
 cqlsh:ucs> update "Contact" set "CreatedDate"='2017-04-01T11:21:59.001+0000' where "Id"='1001uiP2niJPJGBa';
 ```
 

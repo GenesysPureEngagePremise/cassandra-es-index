@@ -9,9 +9,11 @@
     <artifactId>wcc-es-index</artifactId>
     <version>9.1.002.00-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>wcc-es-index</name>
 
-    <url>https://github.com/GenesysPureEngagePremise</url>
+    <name>wcc-es-index</name>
+    <description>Elasticsearch based secondary index for Cassandra</description>
+
+    <url>https://github.com/GenesysPureEngagePremise/cassandra-es-index</url>
 
     <!-- /!\ IMPORTANT: when working on this project you must use provided style:
     * eclipse-java-google-style.xml
@@ -23,6 +25,19 @@
         <name>Genesys Telecommunications Laboratories, Inc.</name>
         <url>http://www.genesys.com</url>
     </organization>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git@github.com:GenesysPureEngagePremise/cassandra-es-index.git</connection>
+        <developerConnection>scm:git:git@github.com:GenesysPureEngagePremise/cassandra-es-index.git</developerConnection>
+        <url>https://github.com/GenesysPureEngagePremise/cassandra-es-index</url>
+    </scm>
 
     <properties>
         <!-- Source -->
@@ -48,7 +63,7 @@
         <version.maven.project.info.reports.plugin>2.9</version.maven.project.info.reports.plugin>
 
         <!-- Assembly -->
-        <jar-destination>../distribution/target/lib4cassandra</jar-destination>
+        <jar-destination>target/distribution/lib4cassandra</jar-destination>
     </properties>
 
     <dependencies>
