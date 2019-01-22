@@ -574,9 +574,60 @@ Possible values:
 * **com.genesyslab.webme.commons.index.IndexDropManager** - index-based expiration and timeframe based segmentation (see segment-size option)
 
 ###### mapping-`<type>`
-See ElasticSerarch documentation for details on type mapping:
-
+See ElasticSearch documentation for details on type mapping:
 http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping.html
+
+All Cassandra column types are supported, data will be sent as a string, an array or a map depending on Cassandra type.
+With the proper mapping, Elasticsearch will then convert the data into the relevant type. This will allow much better searches and reporting.
+
+| Cassandra Types | Elasticsearch Recommended Mapping | Comment |
+|---|---|---|
+| ascii | text or keyword | See next section on **text** type |
+| bigint | long |  |
+| blob | disabled | It's not possible to index binary content |
+| boolean | boolean |  |
+| counter | long |  |
+| date | date |  |
+| decimal | double |  |
+| double | double |  |
+| float | double |  |
+| inet | keyword | ES _ip_ is not tested |
+| int | int |  |
+| list\<_type_> | same as _type_ | ES expects that a _type_ can be either a single value or an array |
+| map\<_typeK_, _typeV_> | object | If your keys can have a lot of different values, beware of [Mapping Explosion](https://www.elastic.co/blog/found-crash-elasticsearch#mapping-explosion) |
+| set\<_type_> | same as type | ES expects that a _type_ can be either a single value or an array |
+| smallint | int |  |
+| text | text or keyword | See next section on **text** type |
+| time | keyword |  |
+| timestamp | "type": "date", "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" |  |
+| timeuuid | keyword |  |
+| tinyint | int |  |
+| tuple\<type1 type2, ...> | type | |
+| uuid | keyword |  |
+| varchar | text or keyword | See next section on **text** type |
+| varint | long |  |
+| User-defined type | object | Each UDT field will be mapped using their names and values |
+
+**Mapping of text type**
+
+When a text (ascii or varchar) column is sent to ES it is sent as raw text to be indexed. However if the text is proper JSON, it is possible 
+to send it as a JSON document for ES to index. This allows to index/search the document instead of raw text.
+
+Using such JSON mapping allows to search data using "columnName.key:value".
+
+If your keys can have a lot of different values, beware of [Mapping Explosion](https://www.elastic.co/blog/found-crash-elasticsearch#mapping-explosion)
+
+**json-serialized-fields** (see options for details)
+
+The content of the text is sent as JSON. In your mapping you can define each document field separately. Note that once a field have been 
+mapped as a type, either by static mapping or dynamic mapping, providing an incompatible type will result in Cassandra write failures.
+
+
+**json-flat-serialized-fields** (see options for details and conversion example)
+
+The content of the text is also sent as JSON, however all values are forced to arrays of flat strings. This will limit the ability to 
+search into nested JSON but is safer if you can't control the JSON type of the values. 
+
 
 ## Index Search Queries
 

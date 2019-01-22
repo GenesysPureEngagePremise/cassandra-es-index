@@ -41,7 +41,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Manages index creation by splitting timeline from EPOH to now into discrete and equals ranges.
- * Provides data expiration on top of calculation whicj index does not contains actual data and
+ * Provides data expiration on top of calculation which index does not contains actual data and
  * drops indexes.
  *
  * @author Sergey Feoktistov
