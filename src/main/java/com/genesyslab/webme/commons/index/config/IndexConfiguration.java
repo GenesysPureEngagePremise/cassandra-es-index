@@ -54,7 +54,7 @@ public class IndexConfiguration implements IndexConfig {
   private final OptionReader reader;
 
   public IndexConfiguration(@Nonnull String name, @Nonnull Map<String, String> cassandraOptions) {
-    this.reader = new OptionReader(name, cassandraOptions);
+    this.reader = new OptionReaderImpl(name, cassandraOptions);
   }
 
   @Override
