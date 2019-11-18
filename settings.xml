@@ -22,8 +22,8 @@
                 </repository>
                 <repository>
                     <id>github</id>
-                    <name>GitHub Genesys Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/Genesys</url>
+                    <name>GitHub Gartcimore Apache Maven Packages</name>
+                    <url>https://maven.pkg.github.com/gartcimore</url>
                 </repository>
             </repositories>
         </profile>
