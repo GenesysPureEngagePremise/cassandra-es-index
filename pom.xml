@@ -43,7 +43,7 @@
         <repository>
             <id>github</id>
             <name>GitHub Gartcimore Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/gartcimore/cassandra-es-index</url>
+            <url>https://maven.pkg.github.com/GenesysPureEngagePremise/cassandra-es-index</url>
         </repository>
     </distributionManagement>
 
