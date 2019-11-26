@@ -7,7 +7,7 @@
 
     <groupId>com.genesyslab.webme.commons</groupId>
     <artifactId>wcc-es-index</artifactId>
-    <version>9.1.002.00-SNAPSHOT</version>
+    <version>9.1.002.00</version>
     <packaging>jar</packaging>
 
     <name>wcc-es-index</name>
