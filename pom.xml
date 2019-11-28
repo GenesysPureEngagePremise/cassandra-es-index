@@ -7,7 +7,7 @@
 
     <groupId>com.genesyslab.webme.commons</groupId>
     <artifactId>wcc-es-index</artifactId>
-    <version>9.1.002.00-SNAPSHOT</version>
+    <version>9.1.002.00</version>
     <packaging>jar</packaging>
 
     <name>wcc-es-index</name>
@@ -38,6 +38,14 @@
         <developerConnection>scm:git:git@github.com:GenesysPureEngagePremise/cassandra-es-index.git</developerConnection>
         <url>https://github.com/GenesysPureEngagePremise/cassandra-es-index</url>
     </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Gartcimore Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/GenesysPureEngagePremise/cassandra-es-index</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <!-- Source -->
