@@ -182,7 +182,7 @@
                 <executions>
                     <execution>
                         <id>assemble-all</id>
-                        <phase>prepare-package</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
