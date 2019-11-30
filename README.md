@@ -3,14 +3,14 @@ This documentation explains usage and configuration of "ESIndex" that is a Elast
 
 This plugin requires an Elasticsearch (ES) cluster already configured.
 
-The plugin will install in a regular Cassandra 3.11.x release downloaded from http://cassandra.apache.org/. 
-There is nothing to change in Cassandra configuration files to support the index. 
+The plugin will install in a regular Cassandra 3.11.x release downloaded from http://cassandra.apache.org/.
+There is nothing to change in Cassandra configuration files to support the index.
 Cassandra’s behaviour remains unchanged for applications that do not use the index.
 
-Once created on a Cassandra table, this index allows to perform "Full Text Search" Elasticsearch queries on Cassandra using CQL and 
-return matching rows from Cassandra data. The usage of this plugin does not require changing Cassandra source code, we have implemented the 
+Once created on a Cassandra table, this index allows to perform "Full Text Search" Elasticsearch queries on Cassandra using CQL and
+return matching rows from Cassandra data. The usage of this plugin does not require changing Cassandra source code, we have implemented the
 ElasticSearch index for Cassandra using:
-* Cassandra interfaces: [Index](https://github.com/apache/cassandra/blob/cassandra-3.11/src/java/org/apache/cassandra/index/Index.java) 
+* Cassandra interfaces: [Index](https://github.com/apache/cassandra/blob/cassandra-3.11/src/java/org/apache/cassandra/index/Index.java)
 * Cassandra API: [CQL](http://cassandra.apache.org/doc/latest/cql/indexes.html)
 
 
@@ -18,8 +18,8 @@ ElasticSearch index for Cassandra using:
 ![Diag](doc/diagram.png)
 
 # Supported Versions
-Tested versions are Elasticsearch 5.x, 6.x and Cassandra 3.11.x. However the plugin may also work with different Elasticsearch versions 
-(1.7, 2.x 5.x, 6.x) if the application provides the corresponding mappings and options. 
+Tested versions are Elasticsearch 5.x, 6.x and Cassandra 3.11.x. However the plugin may also work with different Elasticsearch versions
+(1.7, 2.x 5.x, 6.x) if the application provides the corresponding mappings and options.
 Other versions of Apache Cassandra like 3.0, 2.2 or 4.0 are not supported as the secondary index interface used by the plugin is different.
 Other Cassandra vendors are not tested, ScyllaDB is not supported.
 
@@ -34,39 +34,6 @@ Other Cassandra vendors are not tested, ScyllaDB is not supported.
 * **Yes**: Plugin works without problem.
 * **Limited**: Plugin should work but testing is limited.
 
-# Changes
-## Version 9.1.001
-* Support for Cassandra 3.11.3
-* Support for ES HTTPS, tested with X-Pack and SearchGuard
-* Support for ES authentication, tested with X-Pack and SearchGuard
-* Ability to set unicast-hosts using environment variables or system properties
-
-## Version 9.1.000
-* Support for Cassandra 3.11.2
-* Support for Elasticsearch 6.x
-* Single jar deployment
-* Support for setting options using environment variables or system properties
-
-
-## Version 9.0.000
-* Support for Cassandra 3.11.x (3.0-10 are not supported)
-* Support for Elasticsearch 5.x
-* EsIndex only uses ES HTTP/S REST interface
-* PERF: Reduced memory footprint as Jest client is much lighter than ES client
-* PERF: Streaming partition iterator load rows as they are requested by the client
-* Per DC/Rack options, it's possible to use different settings in different DC/Rack. Syntax is for option "option-name" is \<dcname>.option-name
-* Support for index truncate (truncate table)
-* Support for index rebuild (Nodetool command)
-* Creating a new index on a table with existing data will build the index on that data
-* It is possible to keep data in ES longer than Cassandra by applying a TTL shift or scheduled index delete
-* Index column will contain ES metadata for the corresponding row, first row also have the response metadata
-* Analytic mode will not delete data from ES at all even if it's TTLed or explicitly deleted
-* Thank to per DC/Rack options it's possible to explicitly connect to specific ES nodes in a DC
-* Automatic paging of ES queries is now supported
-* It is now possible to start Cassandra on a failed ES configuration in order to correct the configuration
-* EsIndex will no longer request attributes that are not needed to load the Cassandra rows
-* The only way to configure the index is by using options provided in the create index command or using the special update command
-
 # Distribution
 
 ## Building from sources
@@ -75,13 +42,22 @@ This project requires Maven and compiles with Java 8. To build the plugin, at th
 
 This will build a "all in one jar' in `target/distribution/lib4cassandra`
 
+## Using Maven
+```
+<dependency>
+  <groupId>com.genesyslab.webme.commons</groupId>
+  <artifactId>wcc-es-index</artifactId>
+  <version>9.1.002.00</version>
+</dependency>
+```
+See [Package](https://github.com/GenesysPureEngagePremise/cassandra-es-index/packages)
 ## Installing the plugin in Cassandra
-Put `wcc-es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars, 
+Put `wcc-es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
 for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart you Cassandra node(s).
 
 ## Upgrade of an existing version
 1. Stop Cassandra node.
-2. Remove old wcc-es-index-9.1.001.\<v1>-jar-with-dependencies.jar 
+2. Remove old wcc-es-index-9.1.001.\<v1>-jar-with-dependencies.jar
 3. Add new wcc-es-index-9.1.001.\<v2>-jar-with-dependencies.jar
 4. Start Cassandra node.
 5. Proceed to next node.
@@ -91,18 +67,18 @@ for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart 
 ## Limitations
 
 ### Tables with Clustering Keys
-Due to lack of testing, tables with clustering keys are not supported. Only a partition key is supported, composite partition keys should 
+Due to lack of testing, tables with clustering keys are not supported. Only a partition key is supported, composite partition keys should
 work but were not extensively tested.
 
 ### Cell/Column TTL vs Row TTL
-EsIndex only supports row level TTL where all the cells will expire at the same time and corresponding ES document can be deleted at the 
-same time. If a row have cells that expires at different times, the corresponding document will be deleted when the last cell expires. 
-If using different cell TTL, the data returned from a search will still be consistent as data is read from SSTables, but it will still be 
+EsIndex only supports row level TTL where all the cells will expire at the same time and corresponding ES document can be deleted at the
+same time. If a row have cells that expires at different times, the corresponding document will be deleted when the last cell expires.
+If using different cell TTL, the data returned from a search will still be consistent as data is read from SSTables, but it will still be
 possible to find the row using expired data using an ES query.   
 
 ### Multiple Indexes on the Same Table
-It is possible to create several indexes on the same table, EsIndex will not prevent that. However if more than one EsIndex exists the 
-behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table \<ks.tableName>' can be used to show 
+It is possible to create several indexes on the same table, EsIndex will not prevent that. However if more than one EsIndex exists the
+behavior can be inconsistent, such configuration is not supported. The CQLSH command 'describe table \<ks.tableName>' can be used to show
 indexes created on the table and drop them if necessary.
 
 For sake of simplicity, create this keyspace first:
@@ -114,27 +90,27 @@ CREATE KEYSPACE genesys WITH replication = {'class': 'SimpleStrategy', 'replicat
 Let's use below table as an example:
 ```
 CREATE TABLE genesys.emails (
-   id UUID PRIMARY KEY, 
-   subject text, 
+   id UUID PRIMARY KEY,
+   subject text,
    body text,
    userid int,
    query text
 );  
 ```
 
-You need to dedicate a dummy text column for index usage. 
+You need to dedicate a dummy text column for index usage.
 This column must never receive data. In this example, `query` column is the dummy column.
 
 Here is how to create the index for the example table and use **eshost** for Elasticsearch:
 ```
-CREATE CUSTOM INDEX ON genesys.emails(query) 
+CREATE CUSTOM INDEX ON genesys.emails(query)
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
 WITH OPTIONS = {'unicast-hosts': 'eshost:9200'};
 ```
 
-For example, if your Elasticsearch server is listening on `localhost`, replace **eshost** with **localhost**. 
+For example, if your Elasticsearch server is listening on `localhost`, replace **eshost** with **localhost**.
 
-Errors returned by CQL are very limited, if something goes wrong, like your Elasticsearch host unavailable 
+Errors returned by CQL are very limited, if something goes wrong, like your Elasticsearch host unavailable
 you'll get a timeout or another kind of exception. You'll have to check Cassandra logs to understand what went wrong.
 
 We didn't provide any mapping so we're relying on Elasticsearch dynamic mapping, let's insert some data:
@@ -157,7 +133,7 @@ select id, subject, body, userid, query  from emails where query='body:cassan*';
 
  id                                   | subject     | body                                                                    | userid | query
 --------------------------------------+-------------+-------------------------------------------------------------------------+--------+-------
- 904b88b2-9c61-4539-952e-c179a3805b22 | Hello world | Cassandra is great, but it's even better with EsIndex and Elasticsearch |     42 | 
+ 904b88b2-9c61-4539-952e-c179a3805b22 | Hello world | Cassandra is great, but it's even better with EsIndex and Elasticsearch |     42 |
  {
 	"_index": "genesys_emails_index@",
 	"_type": "emails",
@@ -183,10 +159,10 @@ select id, subject, body, userid, query  from emails where query='body:cassan*';
 ```
 
  (json was formatted)
- 
- All rows will contain data from Cassandra loaded from SSTables using the CQL consistency. 
+
+ All rows will contain data from Cassandra loaded from SSTables using the CQL consistency.
  Data in the 'query' column is the metadata returned by Elasticsearch.
- 
+
  Here is how to query Elasticsearch to check the generated mapping:
  `GET http://eshost:9200/genesys_emails_index@/emails/_mapping?pretty`
 ```json
@@ -293,7 +269,7 @@ This will also drop Elasticsearch index AND data!
 
 and recreate it with a proper mapping:
 ```
-CREATE CUSTOM INDEX ON genesys.emails(query) 
+CREATE CUSTOM INDEX ON genesys.emails(query)
 USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'
 WITH OPTIONS = {
     'unicast-hosts': 'localhost:9200',
@@ -378,7 +354,7 @@ Here is the resulting ES mapping:
 
 Now that mapping is properly defined, we can search _userid_ as a number. In this example we're using Elasticsearch query DSL:
 ```
-select id, subject, body, userid from genesys.emails 
+select id, subject, body, userid from genesys.emails
 where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
 
 @ Row 1
@@ -389,7 +365,7 @@ where query='{"query":{"range":{"userid":{"gte":10,"lte":50}}}}';
  userid  | 42
 ```
 
-It is very important to get the mapping right before starting production. Reindexing a large table will take a lot of time and will put 
+It is very important to get the mapping right before starting production. Reindexing a large table will take a lot of time and will put
 significant load on Cassandra and Elasticsearch. You'll need to check Cassandra logs for errors in your ES mapping. Make sure to escape
 single quotes (') by doubling them in the JSON options provided to the CREATE INDEX command.
 
@@ -418,16 +394,16 @@ To support multi-DC, all options can be prefixed by Datacenter and Rack name to 
 * **<paris.rack1>.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
 
 ### Support for Authentication
-To provide Cassandra index for Elasticsearch with credentials, each node must have the environment variable **ESCREDENTIALS** correctly set 
+To provide Cassandra index for Elasticsearch with credentials, each node must have the environment variable **ESCREDENTIALS** correctly set
 before starting. This must be set on all Cassandra hosts.
 
-The below example provides the password for the user 'elastic' and password 'examplepassword' separated by : (colon) character. 
+The below example provides the password for the user 'elastic' and password 'examplepassword' separated by : (colon) character.
 It can be done either directly in the system as an environment variable or in the shortcut that launches Cassandra.
 
 **ESCREDENTIALS = elastic:examplepassword**
-Once the index is successfully initialized, it will write "Elasticsearch credentials provided" in Cassandra logs at info level. 
-Once this message is output it is possible to clear the environment variable. If Cassandra is restarted the environment variable must 
-be set again before starting. The credentials are kept in memory only and are not saved anywhere else. If user and/or password is changed, 
+Once the index is successfully initialized, it will write "Elasticsearch credentials provided" in Cassandra logs at info level.
+Once this message is output it is possible to clear the environment variable. If Cassandra is restarted the environment variable must
+be set again before starting. The credentials are kept in memory only and are not saved anywhere else. If user and/or password is changed,
 all Cassandra nodes must be restarted with the updated environment variable value.
 
 ### Support for HTTPS
@@ -435,12 +411,12 @@ In the index options set
 
 unicast-hosts = **https**:`//<host name>:9200`
 
-It is currently not possible to migrate an existing index from http to https, usage of one or another must be decided before 
+It is currently not possible to migrate an existing index from http to https, usage of one or another must be decided before
 you create the Cassandra schema. In order to ease HTTPS deployment, the index will automatically trust all HTTPS certificates.
 
 
 ### Analytic mode
-It is possible to keep data on ElasticSearch's side for a longer period time than defined Cassandra TTL. 
+It is possible to keep data on ElasticSearch's side for a longer period time than defined Cassandra TTL.
 This mode is turned using es-analytic-mode option. When the option is enabled ElasticIndex will skip all delete operations.
 
 To keep data from growing too much on ES side, it's advised to use ttl-shift and force-delete settings.
@@ -480,7 +456,7 @@ CREATE CUSTOM INDEX on genesys.email(query) using 'com.genesyslab.webme.commons.
    'discard-nulls':'false',
    'async-search':'true',
    'async-write':'false'
-}; 
+};
 ```
 
 #### Setting options using environment variables or system properties
@@ -490,8 +466,8 @@ You can also set or override options using environment variables or Java system 
 * **genesys-es-unicast-hosts** For example, this allows to control ES host names on DB side so that client don't have to know ES host names
 
 #### Setting options using a file
-Options provided in the "CREATE CUSTOM INDEX" command are used first. 
-They can be locally overridden using a file named **es-index.properties** found in ".", "./conf/", "../conf/" or "./bin/". 
+Options provided in the "CREATE CUSTOM INDEX" command are used first.
+They can be locally overridden using a file named **es-index.properties** found in ".", "./conf/", "../conf/" or "./bin/".
 (can be changed with -Dgenesys-es-esi-file or -Dgenesys.es.esi.file system property)
 
 Here is an example for the content of the file:
@@ -528,7 +504,7 @@ available-while-rebuilding | true | When creating a new index it is possible (or
 truncate-rebuild | false | Truncate ES index before rebuilding.
 purge-period | 60 | Every 60 minutes all empty indexes will be deleted from the alias.
 per-index-type | true | Prepend the index name with table name. In ES 5.x it is not possible anymore to have a different mapping for the same field name in different types of the same index. In ES 6.x types will be removed.
-force-delete | false | Every minute a "delete by query" request is sent to ES to delete documents that have expired _cassandraTtl. This is to emulate the TTL functionality that was removed in ES 5.x. Note that while Cassandra compaction will actually delete document from ES there is no guarantee on when it will occur. 
+force-delete | false | Every minute a "delete by query" request is sent to ES to delete documents that have expired _cassandraTtl. This is to emulate the TTL functionality that was removed in ES 5.x. Note that while Cassandra compaction will actually delete document from ES there is no guarantee on when it will occur.
 ttl-shift | 0 | Time in seconds to shift Cassandra TTL. If TTL was 1h in Cassandra and shift is 3600 it means document in ES will be deleted 1h later than Cassandra.
 index-manager | com.genesyslab.webme.commons.index.DefaultIndexManager| Index manager class name. Is used to manager segmentation and expiration functionality.
 segment-size | 86400000 | Segment time frame in milliseconds. Every "segment-size" milliseconds new index will be created by following template: <alias_name>_index@<yyyyMMdd't'HHmmss'z'>
@@ -568,9 +544,9 @@ Will be converted into:
 }
 ```
 
-###### index-manager 
-Possible values: 
-* **com.genesyslab.webme.commons.index.DefaultIndexManager** - document-based expiration and discrete date-based segmentation (see segment option) 
+###### index-manager
+Possible values:
+* **com.genesyslab.webme.commons.index.DefaultIndexManager** - document-based expiration and discrete date-based segmentation (see segment option)
 * **com.genesyslab.webme.commons.index.IndexDropManager** - index-based expiration and timeframe based segmentation (see segment-size option)
 
 ###### mapping-`<type>`
@@ -610,7 +586,7 @@ With the proper mapping, Elasticsearch will then convert the data into the relev
 
 **Mapping of text type**
 
-When a text (ascii or varchar) column is sent to ES it is sent as raw text to be indexed. However if the text is proper JSON, it is possible 
+When a text (ascii or varchar) column is sent to ES it is sent as raw text to be indexed. However if the text is proper JSON, it is possible
 to send it as a JSON document for ES to index. This allows to index/search the document instead of raw text.
 
 Using such JSON mapping allows to search data using "columnName.key:value".
@@ -619,26 +595,26 @@ If your keys can have a lot of different values, beware of [Mapping Explosion](h
 
 **json-serialized-fields** (see options for details)
 
-The content of the text is sent as JSON. In your mapping you can define each document field separately. Note that once a field have been 
+The content of the text is sent as JSON. In your mapping you can define each document field separately. Note that once a field have been
 mapped as a type, either by static mapping or dynamic mapping, providing an incompatible type will result in Cassandra write failures.
 
 
 **json-flat-serialized-fields** (see options for details and conversion example)
 
-The content of the text is also sent as JSON, however all values are forced to arrays of flat strings. This will limit the ability to 
-search into nested JSON but is safer if you can't control the JSON type of the values. 
+The content of the text is also sent as JSON, however all values are forced to arrays of flat strings. This will limit the ability to
+search into nested JSON but is safer if you can't control the JSON type of the values.
 
 
 ## Index Search Queries
 
-It is a custom implementation of a Cassandra Index. This introduces some limitations tied to Cassandra consistency model. 
-The main limitation is due to the nature of Cassandra secondary indexes, each Cassandra node only contains data it is responsible 
-within the Cassandra ring, with secondary indexes it's the same thing, each node only indexes its local data. 
-It means that when doing a query on the index, the query is sent to all nodes and then results are aggregated by query coordinator and 
+It is a custom implementation of a Cassandra Index. This introduces some limitations tied to Cassandra consistency model.
+The main limitation is due to the nature of Cassandra secondary indexes, each Cassandra node only contains data it is responsible
+within the Cassandra ring, with secondary indexes it's the same thing, each node only indexes its local data.
+It means that when doing a query on the index, the query is sent to all nodes and then results are aggregated by query coordinator and
 returned to the clients.
 
-With ESIndex it is different, since index search is based on ElasticSearch, each node is able to respond to the query. 
-It means that query must only be sent to a single node or result will contain duplicates. This is achieved by forcing a 
+With ESIndex it is different, since index search is based on ElasticSearch, each node is able to respond to the query.
+It means that query must only be sent to a single node or result will contain duplicates. This is achieved by forcing a
 token to the CQL query like below.
 
 ```
@@ -647,20 +623,20 @@ select * from emails where query='subject:12345' and token(id)=0;
 
 The token should be any random long value to spread queries across nodes. It must be built on the partition key of the row, 'id' in the above example.
 
-In the above example the ElasticSearch query is 'subject:12345'. This is a Lucene like query. It is also possible to execute DSL Queries 
+In the above example the ElasticSearch query is 'subject:12345'. This is a Lucene like query. It is also possible to execute DSL Queries
 see Elasticsearch query-dsl page for more details.
 
 ### For best performance
 * Send your Cassandra search query with consistency level ONE.
 * Always provide the type of object you're querying (Elasticsearch query type filter)*
 
-A single Elasticsearch index will contain all the Cassandra table indexes for a given keyspace. 
+A single Elasticsearch index will contain all the Cassandra table indexes for a given keyspace.
 For each index a dedicated Elasticsearch type is used. In order to allow cross-table aggregations, the type is not enforced in the queries.
-It means that if your query can match different types it will return more ids than expected. Since those won't match Cassandra rows you 
+It means that if your query can match different types it will return more ids than expected. Since those won't match Cassandra rows you
 won't get more results, but you could also get less if you limit the number of returned results.
 
 ### Fake Row Loading for Large ResultSet
-If matched row count is high and rows are large, the searches may end in read time-out. You can request only PK to be returned with ES 
+If matched row count is high and rows are large, the searches may end in read time-out. You can request only PK to be returned with ES
 metadata and then load rows in parallel from your code using CQL queries.
 
 In order to tell the index to return PKs only you need to use the below query hint #options:load-rows=false#:
@@ -674,7 +650,7 @@ It is important to note that rows returned are fake and build from the results o
 * If you didn't enforce the type in your query, the Id may belong to another type.
 
 ### Elasticsearch Metadata
-hen a search request returns a result, the first row will contain the Elasticsearch metadata as## a JSON string in the column of the index. 
+hen a search request returns a result, the first row will contain the Elasticsearch metadata as## a JSON string in the column of the index.
 See for example:
 ```
 cqlsh:ucs> select id,query from emails where query='id:00008RD9PrJMMmpr';
@@ -695,7 +671,7 @@ ESIndex segmentation mechanism splits monolithic Elasticsearch index to the sequ
  * if the index was expired accordingly an option "index-ttl" - for analytic mode.
 
 ## TTL Support
-Since ElasticSearch 5.x TTL is not supported anymore. However Cassandra's normal compaction and repair processes automatically 
+Since ElasticSearch 5.x TTL is not supported anymore. However Cassandra's normal compaction and repair processes automatically
 remove a tombstone data, ElasticIndex will remove the data from ElasticSearch.
 
 ## Performance Tracing
@@ -861,3 +837,36 @@ This is an example of asynchronous write:
 This is an example of asynchronous write, Cassandra operation will **not** fail if ES fails:
 
 ![Write Path async](doc/write-path-async-fail.png)
+
+# Changes
+## Version 9.1.001
+* Support for Cassandra 3.11.3
+* Support for ES HTTPS, tested with X-Pack and SearchGuard
+* Support for ES authentication, tested with X-Pack and SearchGuard
+* Ability to set unicast-hosts using environment variables or system properties
+
+## Version 9.1.000
+* Support for Cassandra 3.11.2
+* Support for Elasticsearch 6.x
+* Single jar deployment
+* Support for setting options using environment variables or system properties
+
+
+## Version 9.0.000
+* Support for Cassandra 3.11.x (3.0-10 are not supported)
+* Support for Elasticsearch 5.x
+* EsIndex only uses ES HTTP/S REST interface
+* PERF: Reduced memory footprint as Jest client is much lighter than ES client
+* PERF: Streaming partition iterator load rows as they are requested by the client
+* Per DC/Rack options, it's possible to use different settings in different DC/Rack. Syntax is for option "option-name" is \<dcname>.option-name
+* Support for index truncate (truncate table)
+* Support for index rebuild (Nodetool command)
+* Creating a new index on a table with existing data will build the index on that data
+* It is possible to keep data in ES longer than Cassandra by applying a TTL shift or scheduled index delete
+* Index column will contain ES metadata for the corresponding row, first row also have the response metadata
+* Analytic mode will not delete data from ES at all even if it's TTLed or explicitly deleted
+* Thank to per DC/Rack options it's possible to explicitly connect to specific ES nodes in a DC
+* Automatic paging of ES queries is now supported
+* It is now possible to start Cassandra on a failed ES configuration in order to correct the configuration
+* EsIndex will no longer request attributes that are not needed to load the Cassandra rows
+* The only way to configure the index is by using options provided in the create index command or using the special update command
