@@ -50,7 +50,7 @@ public class App {
       logger.info("creating index");
       session.execute("CREATE CUSTOM INDEX ON genesys.emails(query)\n"
         + "USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'\n"
-        + "WITH OPTIONS = {'unicast-hosts': 'elasticsearchSample:9200'};");
+        + "WITH OPTIONS = {'unicast-hosts': 'elasticsearch:9200'};");
       logger.info("closing connection");
     } catch (Exception e) {
       session.close();
