@@ -4,14 +4,17 @@
 package sample;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-import static com.datastax.oss.driver.api.querybuilder.SchemaBuilder.createKeyspace;
-
 public class App {
 
+  private Logger logger = LoggerFactory.getLogger(App.class);
 
   public static void main(String[] args) {
     try {
@@ -22,7 +25,7 @@ public class App {
   }
 
   public synchronized Boolean connect() {
-    System.out.println("connecting to cassandra");
+    logger.info("connecting to cassandra");
 
     CqlSession session = CqlSession.builder()
       .addContactPoint(new InetSocketAddress("localhost", 9041))
@@ -30,12 +33,12 @@ public class App {
       .build();
 
     try {
-      System.out.println("connected");
-      CreateKeyspace createKs = createKeyspace("sample").withSimpleStrategy(1);
+      logger.info("connected");
+      CreateKeyspace createKs = SchemaBuilder.createKeyspace("genesys").ifNotExists().withSimpleStrategy(1);
       session.execute(createKs.build());
 
-      System.out.println("creating table");
-      session.execute("CREATE TABLE sample.emails (\n"
+      logger.info("creating table");
+      session.execute("CREATE TABLE genesys.emails (\n"
         + "   id UUID PRIMARY KEY,\n"
         + "   subject text,\n"
         + "   body text,\n"
@@ -43,17 +46,18 @@ public class App {
         + "   query text\n"
         + ");");
 
-      System.out.println("done");
-      System.out.println("creating index");
+      logger.info("table created");
+      logger.info("creating index");
       session.execute("CREATE CUSTOM INDEX ON genesys.emails(query)\n"
         + "USING 'com.genesyslab.webme.commons.index.EsSecondaryIndex'\n"
         + "WITH OPTIONS = {'unicast-hosts': 'elasticsearchSample:9200'};");
-      System.out.println("closing connection");
+      logger.info("closing connection");
     } catch (Exception e) {
       session.close();
+      logger.warn("Something went wrong", e);
       return false;
     }
-    System.out.println("done");
+    logger.info("all done");
 
     return true;
   }
