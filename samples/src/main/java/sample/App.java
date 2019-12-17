@@ -4,6 +4,8 @@
 package sample;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.querybuilder.SchemaBuilder;
 import com.datastax.oss.driver.api.querybuilder.schema.CreateKeyspace;
 
@@ -11,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public class App {
 
@@ -27,7 +30,14 @@ public class App {
   public synchronized Boolean connect() {
     logger.info("connecting to cassandra");
 
-    CqlSession session = CqlSession.builder()
+    DriverConfigLoader loader = DriverConfigLoader.programmaticBuilder()
+      .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(5))
+      .startProfile("slow")
+      .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(30))
+      .endProfile()
+      .build();
+
+    CqlSession session = CqlSession.builder().withConfigLoader(loader)
       .addContactPoint(new InetSocketAddress("localhost", 9041))
       .withLocalDatacenter("datacenter1")
       .build();
