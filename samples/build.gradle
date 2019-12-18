@@ -21,6 +21,17 @@ repositories {
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
     mavenCentral()
+
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/GenesysPureEngagePremise/cassandra-es-index")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("PASSWORD")
+        }
+    }
+
+    // f4cae7dbdc2d14e3a4d77679b5de1dd9134657dd
 }
 
 dependencies {
@@ -31,9 +42,9 @@ dependencies {
 
     implementation 'com.datastax.oss:java-driver-query-builder:4.3.1'
 
-    implementation 'org.slf4j:slf4j-api:2.0.0-alpha1'
-    implementation 'org.slf4j:slf4j-log4j12:2.0.0-alpha1'
+    implementation 'com.genesyslab.webme.commons:wcc-es-index:9.1.002.00'
 
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
