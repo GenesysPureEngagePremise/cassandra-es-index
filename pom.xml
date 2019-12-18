@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.genesyslab.index</groupId>
+    <groupId>com.genesyslab</groupId>
     <artifactId>es-index</artifactId>
     <version>9.1.002.00</version>
     <packaging>jar</packaging>
