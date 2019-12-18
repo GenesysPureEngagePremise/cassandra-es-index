@@ -20,7 +20,7 @@ services:
       - samples
     ports:
       - "9061:9060"
-      - "9041:9042"
+      - "9042:9042"
 
 networks:
   samples:
