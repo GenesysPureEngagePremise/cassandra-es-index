@@ -176,7 +176,7 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <finalName>wcc-es-index-${project.version}</finalName>
+                    <finalName>es-index-${project.version}</finalName>
                     <outputDirectory>${jar-destination}</outputDirectory>
                 </configuration>
                 <executions>
