@@ -59,8 +59,6 @@ public class App {
 
   }
 
-
-
   private void queryData() {
     if (!session.isClosed()) {
       try {
