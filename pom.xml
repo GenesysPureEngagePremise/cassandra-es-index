@@ -5,12 +5,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.genesyslab.webme.commons</groupId>
-    <artifactId>wcc-es-index</artifactId>
+    <groupId>com.genesyslab.index</groupId>
+    <artifactId>es-index</artifactId>
     <version>9.1.002.00</version>
     <packaging>jar</packaging>
 
-    <name>wcc-es-index</name>
+    <name>es-index</name>
     <description>Elasticsearch based secondary index for Cassandra</description>
 
     <url>https://github.com/GenesysPureEngagePremise/cassandra-es-index</url>
