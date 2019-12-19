@@ -1,0 +1,3 @@
+export PASSWORD=f4cae7dbdc2d14e3a4d77679b5de1dd9134657dd
+export USERNAME=gartcimore
+
