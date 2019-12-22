@@ -57,12 +57,16 @@ public class EsSecondaryIndexTest {
   private static EsSecondaryIndexUnderTest secondaryIndex;
 
   @BeforeClass
-  public static void setup() throws Exception {
+  public static void setup()  {
     System.setProperty("genesys-es-unicast-hosts", "");
     System.setProperty("genesys-es-<datacenter1.rack1>.unicast-hosts", "https://mars:2048");
     DatabaseDescriptor.clientInitialization(false);
     ElasticClientFactory.setJestClientFactory(JestClientFactoryMock.INSTANCE);
-    secondaryIndex = new EsSecondaryIndexUnderTest();
+    try {
+      secondaryIndex = new EsSecondaryIndexUnderTest();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @AfterClass
