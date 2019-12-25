@@ -45,20 +45,23 @@ This will build a "all in one jar' in `target/distribution/lib4cassandra`
 ## Using Maven
 ```
 <dependency>
-  <groupId>com.genesyslab.webme.commons</groupId>
-  <artifactId>wcc-es-index</artifactId>
+  <groupId>com.genesyslab</groupId>
+  <artifactId>es-index</artifactId>
   <version>9.1.002.00</version>
 </dependency>
 ```
-See [Package](https://github.com/GenesysPureEngagePremise/cassandra-es-index/packages)
+See [Github Package](https://github.com/GenesysPureEngagePremise/cassandra-es-index/packages)
+
+See [Maven repository](https://mvnrepository.com/artifact/com.genesys/es-index/9.1.002.00)
+
 ## Installing the plugin in Cassandra
-Put `wcc-es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
+Put `es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
 for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart you Cassandra node(s).
 
 ## Upgrade of an existing version
 1. Stop Cassandra node.
-2. Remove old wcc-es-index-9.1.001.\<v1>-jar-with-dependencies.jar
-3. Add new wcc-es-index-9.1.001.\<v2>-jar-with-dependencies.jar
+2. Remove old es-index-9.1.001.\<v1>-jar-with-dependencies.jar
+3. Add new es-index-9.1.001.\<v2>-jar-with-dependencies.jar
 4. Start Cassandra node.
 5. Proceed to next node.
 
