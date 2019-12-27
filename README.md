@@ -1,3 +1,6 @@
+![](https://github.com/GenesysPureEngagePremise/cassandra-es-index/workflows/Java%20CI/badge.svg)
+![](https://github.com/GenesysPureEngagePremise/cassandra-es-index/workflows/Build%20And%20Publish/badge.svg)
+
 # Introduction
 This documentation explains usage and configuration of "ESIndex" that is a Elasticsearch based secondary index for Cassandra.
 
@@ -12,7 +15,6 @@ return matching rows from Cassandra data. The usage of this plugin does not requ
 ElasticSearch index for Cassandra using:
 * Cassandra interfaces: [Index](https://github.com/apache/cassandra/blob/cassandra-3.11/src/java/org/apache/cassandra/index/Index.java)
 * Cassandra API: [CQL](http://cassandra.apache.org/doc/latest/cql/indexes.html)
-
 
 
 ![Diag](doc/diagram.png)
