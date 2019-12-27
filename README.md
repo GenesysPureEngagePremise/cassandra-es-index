@@ -1,5 +1,5 @@
 ![](https://github.com/GenesysPureEngagePremise/cassandra-es-index/workflows/Java%20CI/badge.svg)
-![](https://github.com/GenesysPureEngagePremise/cassandra-es-index/workflows/Build%20And%20Publish/badge.svg)
+![](https://github.com/GenesysPureEngagePremise/cassandra-es-index/workflows/Build%20and%20Publish/badge.svg)
 
 # Introduction
 This documentation explains usage and configuration of "ESIndex" that is a Elasticsearch based secondary index for Cassandra.
