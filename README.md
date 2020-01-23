@@ -58,7 +58,7 @@ See [Maven repository](https://mvnrepository.com/artifact/com.genesys/es-index/9
 
 ## Installing the plugin in Cassandra
 Put `es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
-for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart you Cassandra node(s).
+for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart your Cassandra node(s).
 
 ## Upgrade of an existing version
 1. Stop Cassandra node.
@@ -395,8 +395,8 @@ update in each DC and local ES Cluster will be updated as well.
 
 To support multi-DC, all options can be prefixed by Datacenter and Rack name to make settings location specific, for example:
 * **option-name**: applies to all Cassandra nodes
-* **<paris>.option-name**: applies to all Cassandra nodes running in the "paris" DC.
-* **<paris.rack1>.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
+* **&lt;paris&gt;.option-name**: applies to all Cassandra nodes running in the "paris" DC.
+* **&lt;paris.rack1&gt;.option-name**: applies to all Cassandra nodes running in the "paris" DC and rack1.
 
 ### Support for Authentication
 To provide Cassandra index for Elasticsearch with credentials, each node must have the environment variable **ESCREDENTIALS** correctly set
