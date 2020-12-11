@@ -20,6 +20,8 @@ import com.genesyslab.webme.commons.index.requests.ElasticClientFactory;
 import com.genesyslab.webme.commons.index.test.JestClientFactoryMock;
 import com.genesyslab.webme.commons.index.test.JestClientMock;
 
+import com.google.gson.JsonObject;
+
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.ConsistencyLevel;
 import org.apache.cassandra.db.DecoratedKey;
@@ -38,6 +40,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import io.searchbox.client.JestResult;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -62,6 +66,18 @@ public class EsSecondaryIndexTest {
     System.setProperty("genesys-es-<datacenter1.rack1>.unicast-hosts", "https://mars:2048");
     DatabaseDescriptor.clientInitialization(false);
     ElasticClientFactory.setJestClientFactory(JestClientFactoryMock.INSTANCE);
+    JestResult cluster = mock(JestResult.class);
+    when(cluster.isSucceeded()).thenReturn(true);
+    JestClientMock.addResponse(cluster);
+
+    JestResult getVersion = mock(JestResult.class);
+    when(getVersion.isSucceeded()).thenReturn(true);
+    JsonObject jsonIndex = new JsonObject();
+    JsonObject version = new JsonObject();
+    version.addProperty("number", "7.9.2");
+    jsonIndex.add("version", version);
+    when(getVersion.getJsonObject()).thenReturn(jsonIndex);
+    JestClientMock.addResponse(getVersion);
     secondaryIndex = new EsSecondaryIndexUnderTest();
   }
 

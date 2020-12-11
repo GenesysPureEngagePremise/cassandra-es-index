@@ -7,7 +7,7 @@
 
     <groupId>com.genesys</groupId>
     <artifactId>es-index</artifactId>
-    <version>9.1.002.00</version>
+    <version>9.1.003.00</version>
     <packaging>jar</packaging>
 
     <name>es-index</name>

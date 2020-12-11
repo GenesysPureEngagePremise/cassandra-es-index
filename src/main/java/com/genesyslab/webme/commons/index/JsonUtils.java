@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Predicate;
@@ -304,5 +305,26 @@ public class JsonUtils {
       return null;
     }
     return null;
+  }
+
+  public static JsonObject dotedToStructured(JsonObject src) {
+    JsonObject dest = new JsonObject();
+    src.entrySet().forEach(item -> {
+      JsonObject node = dest;
+
+      for (Iterator<String> it = Arrays.stream(item.getKey().split("\\.")).iterator(); it.hasNext(); ) {
+        String key = it.next();
+
+        if (!it.hasNext()) {
+          node.add(key, item.getValue());
+        } else {
+          if (!node.has(key)) {
+            node.add(key, new JsonObject());
+          }
+          node = node.getAsJsonObject(key);
+        }
+      }
+    });
+    return dest;
   }
 }

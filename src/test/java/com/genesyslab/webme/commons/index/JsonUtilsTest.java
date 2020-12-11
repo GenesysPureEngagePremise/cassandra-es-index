@@ -16,12 +16,14 @@
 package com.genesyslab.webme.commons.index;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 
+import static com.genesyslab.webme.commons.index.JsonUtils.dotedToStructured;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -31,7 +33,7 @@ import static org.junit.Assert.assertThat;
  */
 public class JsonUtilsTest {
 
-  private JsonObject obj = new JsonObject();
+  private final JsonObject obj = new JsonObject();
 
   @Before
   public void makeJsonObject() {
@@ -48,7 +50,7 @@ public class JsonUtilsTest {
   }
 
   @Test
-  public void test() throws IOException {
+  public void jsonStringToStringMapTest() throws IOException {
     assertEquals("{doors=5, brand=Mercedes}", JsonUtils.jsonStringToStringMap("{ \"brand\" : \"Mercedes\", \"doors\" : 5 }").toString());
   }
 
@@ -80,6 +82,17 @@ public class JsonUtilsTest {
     assertThat(JsonUtils.getString(obj, "keep"), is("1"));
     assertThat(JsonUtils.getString(obj, "Inner1", "keep me"), is("4"));
     assertThat(JsonUtils.getString(obj, "Inner2", "remove me"), is("5"));
+  }
+
+  String SRC =
+    "{\"index.translog.durability\":\"async\",\"analysis.analyzer.email_analyzer.filter\":\"lowercase\",\"analysis.analyzer.html_analyzer.tokenizer\":\"ngram\",\"analysis.analyzer.email_analyzer.type\":\"pattern\",\"index.analysis.normalizer.lower_ascii_normalizer.filter\":[\"lowercase\",\"asciifolding\"],\"index.analysis.analyzer.lowercase_analyzer.filter\":\"lowercase\",\"index.analysis.analyzer.lowercase_analyzer.type\":\"custom\",\"analysis.analyzer.html_analyzer.type\":\"custom\",\"analysis.analyzer.html_analyzer.filter\":\"lowercase\",\"analysis.analyzer.html_analyzer.char_filter\":\"html_strip\",\"index.analysis.normalizer.lower_ascii_normalizer.type\":\"custom\",\"index.analysis.analyzer.lowercase_analyzer.tokenizer\":\"keyword\"}";
+  String EXP =
+    "{\"index\":{\"translog\":{\"durability\":\"async\"},\"analysis\":{\"normalizer\":{\"lower_ascii_normalizer\":{\"filter\":[\"lowercase\",\"asciifolding\"],\"type\":\"custom\"}},\"analyzer\":{\"lowercase_analyzer\":{\"filter\":\"lowercase\",\"type\":\"custom\",\"tokenizer\":\"keyword\"}}}},\"analysis\":{\"analyzer\":{\"email_analyzer\":{\"filter\":\"lowercase\",\"type\":\"pattern\"},\"html_analyzer\":{\"tokenizer\":\"ngram\",\"type\":\"custom\",\"filter\":\"lowercase\",\"char_filter\":\"html_strip\"}}}}";
+
+  @Test
+  public void dotedToStructuredTest() throws IOException {
+
+    assertEquals(EXP, dotedToStructured((JsonObject) new JsonParser().parse(SRC)).toString());
   }
 
 }

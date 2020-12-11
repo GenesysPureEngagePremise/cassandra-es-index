@@ -886,6 +886,11 @@ This is an example of asynchronous write, Cassandra operation will **not** fail 
 ![Write Path async](doc/write-path-async-fail.png)
 
 # Changes
+## Version 9.1.003
+* Support for ES 7.x (plugin needs to be upraded before ES, using 7.x with older plugin will not work)
+* Support for Cassandra 3.11.5 (just testing, older versions will work as well)
+
+
 ## Version 9.1.001
 * Support for Cassandra 3.11.3
 * Support for ES HTTPS, tested with X-Pack and SearchGuard

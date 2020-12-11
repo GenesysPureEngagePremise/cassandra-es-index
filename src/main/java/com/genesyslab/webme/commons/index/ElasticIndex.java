@@ -18,6 +18,7 @@ package com.genesyslab.webme.commons.index;
 import com.genesyslab.webme.commons.index.config.IndexConfig;
 import com.genesyslab.webme.commons.index.monitor.EsJmxBridge;
 import com.genesyslab.webme.commons.index.requests.ElasticClientFactory;
+import com.genesyslab.webme.commons.index.requests.GenericRequest;
 import com.genesyslab.webme.commons.index.requests.ResponseHandler;
 import com.genesyslab.webme.commons.index.requests.UpdatePipeline;
 
@@ -91,6 +92,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.genesyslab.webme.commons.index.JsonUtils.dotedToStructured;
 import static io.searchbox.params.Parameters.EXPLAIN;
 import static io.searchbox.params.Parameters.RETRY_ON_CONFLICT;
 import static org.json.simple.JSONValue.escape;
@@ -138,6 +140,7 @@ public class ElasticIndex implements IndexInterface {
   static {
     readEsCredentials();
   }
+
 
   static void readEsCredentials() {
     esUserName = null;
@@ -188,7 +191,7 @@ public class ElasticIndex implements IndexInterface {
   private boolean isAsyncWrite;
   private boolean insertOnly;
   private int httpPort;
-
+  private boolean isV6 = true; //v6 or less
 
   ElasticIndex(@Nonnull IndexConfig indexConfig, @Nonnull String indexName, @Nonnull String tableName,
     @Nonnull List<String> partitionKeysNames, @Nonnull List<String> clusteringColumnsNames) throws ConfigurationException {
@@ -311,6 +314,11 @@ public class ElasticIndex implements IndexInterface {
     JestResult res = execute(new Health.Builder().waitForStatus(Health.Status.YELLOW).build()).waitForSuccess();
     LOGGER.debug("Got cluster status: {}", res.getJsonString());
 
+    JsonObject version = execute(new GenericRequest("GET", "/", null)).waitForSuccess().getJsonObject().getAsJsonObject("version");
+    String number = version.get("number").getAsString();
+    LOGGER.info("Connected to Elasticsearch version {}", number);
+    isV6 = Integer.parseInt(number.substring(0, 1)) < 7;
+
     setupIndex(indexManager.getCurrentName()); // Will create the ES index if needed
 
     LOGGER.debug("ElasticIndex '{}/{}' initialized, pipeline:{}", indexManager.getAliasName(), indexManager.getCurrentName(), usePipeline);
@@ -330,8 +338,17 @@ public class ElasticIndex implements IndexInterface {
     indexProperties = JsonUtils.filterKeys(indexProperties, IndexConfig.SETTINGS_TO_SKIP);
     indexProperties.entrySet().removeIf(elem -> elem.getKey().endsWith(IndexConfig.ES_UNICAST_HOSTS));
 
-    if (indexProperties.get(IndexConfig.ES_TRANSLOG) == null) { // https://intranet.genesys.com/pages/viewpage.action?pageId=63998861
+    if (
+      indexProperties.get(IndexConfig.ES_TRANSLOG) == null) { // https://intranet.genesys.com/pages/viewpage.action?pageId=63998861
       indexProperties.addProperty(IndexConfig.ES_TRANSLOG, IndexConfig.ES_TRANSLOG_ASYNC);
+    }
+
+    //ES7 don't support dotted props anymore and requires them in the settings object
+    if (!isV6 && !indexProperties.has("settings")) {
+      LOGGER.warn("Received dotted index properties, converting to structured json compatible with ES v7");
+      JsonObject settings = dotedToStructured(indexProperties);
+      indexProperties = new JsonObject();
+      indexProperties.add("settings", settings);
     }
 
     boolean indexExists = execute(new IndicesExists.Builder(indexName).build()).waitForResult().isSucceeded();
@@ -350,7 +367,7 @@ public class ElasticIndex implements IndexInterface {
       if (updatableProperties.size() == 0) {
         LOGGER.debug("No settings to update");
       } else {
-        LOGGER.info("Applying updatable settings from cfg ()", updatableProperties);
+        LOGGER.info("Applying updatable settings from cfg {}", updatableProperties);
         JestResult res = execute(new UpdateSettings.Builder(updatableProperties).addIndex(indexName).build()).waitForSuccess();
         LOGGER.info("Index settings update result is: {}", res.isSucceeded());
       }
@@ -406,19 +423,23 @@ public class ElasticIndex implements IndexInterface {
 
     if (StringUtils.isNotBlank(mapping)) {
       LOGGER.debug("Updating type mapping for '{}' to:\n\t{}", typeName, mapping);
-      // We put the new getMapping on current index, not the alias
-      execute(new PutMapping.Builder(indexName, typeName, mapping).build()).waitForSuccess();
+      putMapping(indexName, mapping);
     }
-  }
-
-  public SearchResult getMapping(String index) {
-    JestResult result = execute(new GetMapping.Builder().addIndex(index).build()).waitForResult();
-    return new SearchResult(new ArrayList<>(), result.getJsonObject());
   }
 
   @Override
   public SearchResult putMapping(String index, String source) {
-    JestResult result = execute(new PutMapping.Builder(index, typeName, source).build()).waitForResult();
+    // We put the new getMapping on current index, not the alias
+    PutMapping.Builder put = new PutMapping.Builder(index, typeName, source);
+    if (!isV6) {
+      put.setParameter("include_type_name", "true");
+    }
+    JestResult result = execute(put.build()).waitForSuccess();
+    return new SearchResult(new ArrayList<>(), result.getJsonObject());
+  }
+
+  public SearchResult getMapping(String index) {
+    JestResult result = execute(new GetMapping.Builder().addIndex(index).build()).waitForResult();
     return new SearchResult(new ArrayList<>(), result.getJsonObject());
   }
 
@@ -429,25 +450,25 @@ public class ElasticIndex implements IndexInterface {
       // lock on intern representation of type+PK, for example: "Interaction[(Id,0001HZO1Qq0haiGs)]"
       // This prevents concurrent upserts on the same doc from the same node
       synchronized ((typeName + partitionKeys).intern()) {
-        indexInternal(partitionKeys, elements, expirationTime, isInsert);
+        indexInternal(partitionKeys, elements, expirationTime);
       }
     } else {
-      indexInternal(partitionKeys, elements, expirationTime, isInsert);
+      indexInternal(partitionKeys, elements, expirationTime);
     }
   }
 
-  private void indexInternal(List<Pair<String, String>> partitionKeys, List<CellElement> elements, long expirationTime, boolean isInsert)
+  private void indexInternal(List<Pair<String, String>> partitionKeys, List<CellElement> elements, long expirationTime)
     throws IOException {
 
     Map<String, List<CellElement>> groupedMap = group(partitionKeys, elements);
 
     for (Map.Entry<String, List<CellElement>> entry : groupedMap.entrySet()) {
-      update(partitionKeys, entry.getKey(), entry.getValue(), expirationTime, isInsert);
+      update(partitionKeys, entry.getKey(), entry.getValue(), expirationTime);
     }
   }
 
-  private void update(List<Pair<String, String>> partitionKeys, String docId, List<CellElement> elements, long expirationTime,
-    boolean isInsert) throws IOException {
+  private void update(List<Pair<String, String>> partitionKeys, String docId, List<CellElement> elements, long expirationTime)
+    throws IOException {
 
     StringWriter stringWriter = new StringWriter();
 
@@ -655,8 +676,7 @@ public class ElasticIndex implements IndexInterface {
 
     LOGGER.trace("Index {} search result: {}", typeName, searchResponse);
 
-    int totalHits = (int) Math.min(searchResponse.getTotal() == null ? 0 : searchResponse.getTotal(), maxResults); // D38117
-    final List<SearchResultRow> idList = new ArrayList<>(totalHits);
+    final List<SearchResultRow> idList = new ArrayList<>();
 
     JsonElement hits = JsonUtils.getJsonObject(searchResponse, ES_HITS).get(ES_HITS);
     if (hits != null) {

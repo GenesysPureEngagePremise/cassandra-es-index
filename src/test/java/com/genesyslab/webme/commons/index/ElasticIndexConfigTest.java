@@ -21,9 +21,13 @@ import com.genesyslab.webme.commons.index.requests.ElasticClientFactory;
 import com.genesyslab.webme.commons.index.test.JestClientFactoryMock;
 import com.genesyslab.webme.commons.index.test.JestClientMock;
 
+import com.google.gson.JsonObject;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import io.searchbox.client.JestResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +37,8 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Jacques-Henri Berthemet 25/10/2018
@@ -57,6 +63,19 @@ public class ElasticIndexConfigTest {
 
   @Test
   public void shouldSetEsHostNames() {
+    JestResult cluster = mock(JestResult.class);
+    when(cluster.isSucceeded()).thenReturn(true);
+    JestClientMock.addResponse(cluster);
+
+    JestResult getVersion = mock(JestResult.class);
+    when(getVersion.isSucceeded()).thenReturn(true);
+    JsonObject jsonIndex = new JsonObject();
+    JsonObject version = new JsonObject();
+    version.addProperty("number", "7.9.2");
+    jsonIndex.add("version", version);
+    when(getVersion.getJsonObject()).thenReturn(jsonIndex);
+    JestClientMock.addResponse(getVersion);
+
     Map<String, String> options = new HashMap<>();
     options.put("<datacenter1>.unicast-hosts", "jupiter,mars");
     IndexConfig indexConfig = new IndexConfiguration(TABLE_NAME, options);
@@ -64,9 +83,9 @@ public class ElasticIndexConfigTest {
     indexUnderTest.init();
 
     assertThat(JestClientFactoryMock.httpConfig.getServerList(), hasItems("http://jupiter:9200", "http://mars:9200"));
-    assertThat(JestClientMock.receivedRequests.size(), is(2));
+    assertThat(JestClientMock.receivedRequests.size(), is(3));
     assertThat(JestClientMock.receivedRequests.get(0).toString(),
       is("Health{uri=/_cluster/health/_all?wait_for_status=yellow, method=GET}"));
-    assertThat(JestClientMock.receivedRequests.get(1).toString(), is("IndicesExists{uri=testkeyspace_testtable_index%40, method=HEAD}"));
+    assertThat(JestClientMock.receivedRequests.get(2).toString(), is("IndicesExists{uri=testkeyspace_testtable_index%40, method=HEAD}"));
   }
 }
