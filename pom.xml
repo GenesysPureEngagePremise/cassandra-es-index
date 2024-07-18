@@ -7,7 +7,7 @@
 
     <groupId>com.genesys</groupId>
     <artifactId>es-index</artifactId>
-    <version>9.1.003.00</version>
+    <version>9.2.000.00</version>
     <packaging>jar</packaging>
 
     <name>es-index</name>
@@ -23,7 +23,7 @@
 
     <organization>
         <name>Genesys Telecommunications Laboratories, Inc.</name>
-        <url>http://www.genesys.com</url>
+        <url>https://www.genesys.com</url>
     </organization>
 
     <licenses>
@@ -44,7 +44,7 @@
             <name>Jacques-Henri Berthemet</name>
             <email>support@genesys.com</email>
             <organization>Genesys</organization>
-            <organizationUrl>http://genesys.com</organizationUrl>
+            <organizationUrl>https://genesys.com</organizationUrl>
         </developer>
     </developers>
 
@@ -65,7 +65,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Compile -->
-        <version.cassandra.esindex>4.0.10</version.cassandra.esindex>
+        <version.cassandra.esindex>4.0.13</version.cassandra.esindex>
         <version.jest>5.3.2</version.jest>
         <version.google.gson>2.8.9</version.google.gson>
         <version.findbugs.annotations>3.0.1u2</version.findbugs.annotations>
@@ -87,7 +87,7 @@
     </properties>
 
     <dependencies>
-        <!-- Cassandra 3.11.x -->
+        <!-- Cassandra 4.0 -->
         <dependency>
             <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-all</artifactId>
@@ -95,7 +95,6 @@
             <version>${version.cassandra.esindex}</version>
             <exclusions>
                 <exclusion>
-                    <!-- Don't know why libthrift needs httpcore but actual Cassandra 3.11 don't have it so it's OK to exclude it-->
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpcore</artifactId>
                 </exclusion>
@@ -109,7 +108,7 @@
             <version>${version.jest}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId> <!-- Cassandra already have it, 1.7.7 for both-->
+                    <groupId>org.slf4j</groupId> <!-- Cassandra already have it, 1.7.25 for both-->
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
                 <exclusion>
@@ -117,7 +116,7 @@
                     <artifactId>commons-codec</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.guava</groupId> <!-- Cassandra already have it, 18.0 for both -->
+                    <groupId>com.google.guava</groupId> <!-- Cassandra already have it, 27.0 for both -->
                     <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
@@ -161,8 +160,8 @@
             <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
-    </dependencies>
 
+    </dependencies>
 
     <build>
         <plugins>
@@ -182,19 +181,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.2.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${version.maven.assembly.plugin}</version>
                 <configuration>
@@ -207,50 +193,12 @@
                 <executions>
                     <execution>
                         <id>assemble-all</id>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.8</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -262,6 +210,20 @@
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>${version.maven.project.info.reports.plugin}</version>
             </plugin>
-        </plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-source-plugin</artifactId>
+              <version>3.2.0</version>
+              <executions>
+                <execution>
+                  <id>attach-sources</id>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>jar-no-fork</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+      </plugins>
     </build>
 </project>

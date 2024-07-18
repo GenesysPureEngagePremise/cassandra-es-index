@@ -1,33 +1,20 @@
 /*
  * Copyright 2019 Genesys Telecommunications Laboratories, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.genesyslab.webme.commons.index;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
-
-import io.searchbox.client.JestResult;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS;
+import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_SINGLE_QUOTES;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -41,8 +28,18 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Predicate;
 
-import static org.codehaus.jackson.JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS;
-import static org.codehaus.jackson.JsonParser.Feature.ALLOW_SINGLE_QUOTES;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import io.searchbox.client.JestResult;
 
 /**
  * Created by Jacques-Henri Berthemet on 05/07/2017.
@@ -63,14 +60,12 @@ public class JsonUtils {
 
   @Nonnull
   static Map<String, String> jsonStringToStringMap(@Nonnull String jsonString) throws IOException {
-    return OBJECT_MAPPER.readValue(jsonString, new TypeReference<HashMap<String, String>>() {
-    });
+    return OBJECT_MAPPER.readValue(jsonString, new TypeReference<HashMap<String, String>>() {});
   }
 
   @Nonnull
   private static Map<String, Object> jsonStringToObjectMap(@Nonnull String jsonString) throws IOException {
-    return OBJECT_MAPPER.readValue(jsonString, new TypeReference<Map<String, Object>>() {
-    });
+    return OBJECT_MAPPER.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
   }
 
   @Nonnull
@@ -79,7 +74,8 @@ public class JsonUtils {
   }
 
   /**
-   * Transform the JSON to a map:string,string[] because ES won't support values of different types for the same key
+   * Transform the JSON to a map:string,string[] because ES won't support values of different types
+   * for the same key
    */
   @Nonnull
   static String flatten(@Nonnull String jsonString) throws IOException {
@@ -93,21 +89,21 @@ public class JsonUtils {
       builder.writeFieldName(entry.getKey());
       builder.writeStartArray();
 
-      //sub-maps are transformed in arrays of key-values
-      //this allows searching for NAME:key=value
+      // sub-maps are transformed in arrays of key-values
+      // this allows searching for NAME:key=value
       if (value instanceof Map<?, ?>) {
         for (Map.Entry<?, ?> subEntry : ((Map<?, ?>) value).entrySet()) {
           builder.writeString(String.format("%s=%s", String.valueOf(subEntry.getKey()), String.valueOf(subEntry.getValue())));
         }
-      } else if (value instanceof Object[]) { //arrays to arrays of string
+      } else if (value instanceof Object[]) { // arrays to arrays of string
         for (Object object : ((Object[]) value)) {
           builder.writeString(String.valueOf(object));
         }
-      } else if (value instanceof Collection) { //Collections to arrays of string
+      } else if (value instanceof Collection) { // Collections to arrays of string
         for (Object object : ((Collection<?>) value)) {
           builder.writeString(String.valueOf(object));
         }
-      } else { //single values in their string representations
+      } else { // single values in their string representations
         builder.writeString(String.valueOf(value));
       }
       builder.writeEndArray();
@@ -165,7 +161,7 @@ public class JsonUtils {
 
   /**
    * @param result JestResult to extract
-   * @param keys   the key chain to go through
+   * @param keys the key chain to go through
    * @return an empty JsonObject if key chain not found
    */
   @Nonnull
@@ -208,7 +204,7 @@ public class JsonUtils {
 
   /**
    * @param jsonObject object to filter
-   * @param keys       keys to remove
+   * @param keys keys to remove
    * @return a copy as deep as key.length
    */
   @Nonnull
@@ -222,7 +218,7 @@ public class JsonUtils {
 
   /**
    * @param jsonObject object to filter
-   * @param path       path to the key to remove
+   * @param path path to the key to remove
    * @return a copy as deep as key.length
    */
   @Nonnull
@@ -253,7 +249,7 @@ public class JsonUtils {
 
   /**
    * @param jsonObject object to filter
-   * @param predicate  matching predicate will keep the keys
+   * @param predicate matching predicate will keep the keys
    * @return a shallow copy
    */
   @Nonnull
@@ -276,7 +272,7 @@ public class JsonUtils {
   }
 
   /**
-   * @param main  elements of this json will overwrite the other's params
+   * @param main elements of this json will overwrite the other's params
    * @param other will be overwritten by main if same keys exists
    * @return null if both are null, if one is null the other is returned
    */
@@ -312,7 +308,7 @@ public class JsonUtils {
     src.entrySet().forEach(item -> {
       JsonObject node = dest;
 
-      for (Iterator<String> it = Arrays.stream(item.getKey().split("\\.")).iterator(); it.hasNext(); ) {
+      for (Iterator<String> it = Arrays.stream(item.getKey().split("\\.")).iterator(); it.hasNext();) {
         String key = it.next();
 
         if (!it.hasNext()) {

@@ -1,21 +1,21 @@
 /*
  * Copyright 2019 Genesys Telecommunications Laboratories, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.genesyslab.webme.commons.index;
 
-import com.google.common.base.Stopwatch;
+import java.util.Collection;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.cassandra.db.DecoratedKey;
 import org.apache.cassandra.db.compaction.CompactionInfo;
@@ -29,9 +29,7 @@ import org.apache.cassandra.utils.UUIDGen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import com.google.common.base.Stopwatch;
 
 /**
  * Index building task that reads all live SSTables and index the content
@@ -67,31 +65,30 @@ public class EsIndexBuilder extends SecondaryIndexBuilder {
       index.esIndex.truncate();
     }
 
-    //For each of the SSTables, we get a partition scanner, for each partition we get its row and we index it
-    ssTables.forEach(ssTableReader -> ssTableReader.getScanner()
-      .forEachRemaining(partition -> {
-          partition.forEachRemaining(row -> {
-            if (isStopRequested()) {
-              LOGGER.warn("{} build {} stop requested {}/{} rows", index.name, compactionId, processed, total);
-              throw new CompactionInterruptedException(getCompactionInfo());
-            }
-
-            DecoratedKey key = partition.partitionKey();
-            if (row instanceof Row) { //not sure what else it could be
-              index.index(key, (Row) row, null, FBUtilities.nowInSeconds());
-            } else {
-              LOGGER.warn("{} build {} skipping unsupported {} {}", index.name, compactionId, row.getClass().getName(), key);
-            }
-            processed++;
-          });
+    // For each of the SSTables, we get a partition scanner, for each partition we get its row and we
+    // index it
+    ssTables.forEach(ssTableReader -> ssTableReader.getScanner().forEachRemaining(partition -> {
+      partition.forEachRemaining(row -> {
+        if (isStopRequested()) {
+          LOGGER.warn("{} build {} stop requested {}/{} rows", index.name, compactionId, processed, total);
+          throw new CompactionInterruptedException(getCompactionInfo());
         }
-      )
-    );
+
+        DecoratedKey key = partition.partitionKey();
+        if (row instanceof Row) { // not sure what else it could be
+          index.index(key, (Row) row, null, FBUtilities.nowInSeconds());
+        } else {
+          LOGGER.warn("{} build {} skipping unsupported {} {}", index.name, compactionId, row.getClass().getName(), key);
+        }
+        processed++;
+      });
+    }));
 
     LOGGER.info("{} build {} completed in {} minutes for {} rows", index.name, compactionId, stopwatch.elapsed(TimeUnit.MINUTES), total);
   }
 
+  @Override
   public CompactionInfo getCompactionInfo() {
-    return new CompactionInfo(null, OperationType.INDEX_BUILD, processed, total, null, compactionId);
+    return CompactionInfo.withoutSSTables(null, OperationType.INDEX_BUILD, processed, total, null, compactionId);
   }
 }

@@ -38,9 +38,9 @@ import org.apache.http.nio.conn.SchemeIOSessionStrategy;
 import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -216,7 +216,7 @@ public class ElasticIndex implements IndexInterface {
       esUrls.add(host);
     }
 
-    int timeout = (int) Math.max(DatabaseDescriptor.getWriteRpcTimeout(), DatabaseDescriptor.getReadRpcTimeout());
+    int timeout = (int) Math.max(DatabaseDescriptor.getWriteRpcTimeout(TimeUnit.MILLISECONDS), DatabaseDescriptor.getReadRpcTimeout(TimeUnit.MILLISECONDS));
     int maxCon = DatabaseDescriptor.getConcurrentWriters() + DatabaseDescriptor.getConcurrentReaders();
 
     LOGGER.info("Request timeout: {}ms, max connections: {}, discovery: {}m", timeout, maxCon, DISCOVERY_FREQ);

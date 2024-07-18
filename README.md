@@ -48,7 +48,7 @@ This documentation explains usage and configuration of "ESIndex" that is a Elast
 
 This plugin requires an Elasticsearch (ES) cluster already configured.
 
-The plugin will install in a regular Cassandra 3.11.x release downloaded from http://cassandra.apache.org/.
+The plugin will install in a regular Cassandra 4.0.x release downloaded from http://cassandra.apache.org/.
 There is nothing to change in Cassandra configuration files to support the index.
 Cassandra’s behaviour remains unchanged for applications that do not use the index.
 
@@ -62,17 +62,17 @@ ElasticSearch index for Cassandra using:
 ![Diag](doc/diagram.png)
 
 # Supported Versions
-Tested versions are Elasticsearch 5.x, 6.x and Cassandra 3.11.x. However the plugin may also work with different Elasticsearch versions
-(1.7, 2.x 5.x, 6.x) if the application provides the corresponding mappings and options.
-Other versions of Apache Cassandra like 3.0, 2.2 or 4.0 are not supported as the secondary index interface used by the plugin is different.
+Tested versions are Elasticsearch 5.x, 6.x, 7.x and Cassandra 4.0.x. However the plugin may also work with different Elasticsearch versions
+(1.7, 2.x 5.x, 6.x, 7.x) if the application provides the corresponding mappings and options.
+Other versions of Apache Cassandra like 1.x 2.x, 3.x or 4.1 are not supported as the secondary index interface used by the plugin is different.
 Other Cassandra vendors are not tested, ScyllaDB is not supported.
 
-| Versions | Elasticsearch 1.x | Elasticsearch 2.x | Elasticsearch 5.x | Elasticsearch  6.x |
-|---|---|---|---|---|
-| Cassandra 2.x | No | No | No | No |
-| Cassandra 3.x  | No | No | No | No |
-| Cassandra 3.11.x  |  Limited | Limited | Yes | Yes |
-| Cassandra 4.x  | No | No | No | No |
+| Versions      | Elasticsearch 1.x | Elasticsearch 2.x | Elasticsearch 5.x | Elasticsearch  6.x | Elasticsearch  7.x |
+|---------------|-------------------|-------------------|-------------------|--------------------|--------------------|
+| Cassandra 1.x | No                | No                | No                | No                 | No                 |
+| Cassandra 2.x | No                | No                | No                | No                 | No                 |
+| Cassandra 3.x | No                | No                | No                | No                 | No                 |
+| Cassandra 4.x | Limited           | Limited           | Limited           | Yes                | Yes                |
 
 * **No**: Plugin can't work due to different Cassandra interface.
 * **Yes**: Plugin works without problem.
@@ -91,7 +91,7 @@ This will build a "all in one jar' in `target/distribution/lib4cassandra`
 <dependency>
   <groupId>com.genesyslab</groupId>
   <artifactId>es-index</artifactId>
-  <version>9.1.002.00</version>
+  <version>9.2.000.00</version>
 </dependency>
 ```
 See [Github Package](https://github.com/GenesysPureEngagePremise/cassandra-es-index/packages)
@@ -99,13 +99,13 @@ See [Github Package](https://github.com/GenesysPureEngagePremise/cassandra-es-in
 See [Maven repository](https://mvnrepository.com/artifact/com.genesys/es-index/9.1.002.00)
 
 ## Installing the plugin in Cassandra
-Put `es-index-9.1.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
+Put `es-index-9.2.000.xx-jar-with-dependencies.jar` in the lib folder of Cassandra along with other Cassandra jars,
 for example '/usr/share/cassandra/lib' on all Cassandra nodes. Start or restart your Cassandra node(s).
 
 ## Upgrade of an existing version
 1. Stop Cassandra node.
-2. Remove old es-index-9.1.001.\<v1>-jar-with-dependencies.jar
-3. Add new es-index-9.1.001.\<v2>-jar-with-dependencies.jar
+2. Remove old es-index-9.2.000.\<v1>-jar-with-dependencies.jar
+3. Add new es-index-9.2.000.\<v2>-jar-with-dependencies.jar
 4. Start Cassandra node.
 5. Proceed to next node.
 
@@ -886,6 +886,10 @@ This is an example of asynchronous write, Cassandra operation will **not** fail 
 ![Write Path async](doc/write-path-async-fail.png)
 
 # Changes
+## Version 9.2.000
+* Support for Cassandra 4.0.x
+* Drop support for Cassandra 3.x
+
 ## Version 9.1.003
 * Support for ES 7.x (plugin needs to be upraded before ES, using 7.x with older plugin will not work)
 * Support for Cassandra 3.11.5 (just testing, older versions will work as well)
