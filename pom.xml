@@ -65,7 +65,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Compile -->
-        <version.cassandra.esindex>4.0.13</version.cassandra.esindex>
+        <version.cassandra.esindex>4.0.16</version.cassandra.esindex>
         <version.jest>5.3.2</version.jest>
         <version.google.gson>2.8.9</version.google.gson>
         <version.findbugs.annotations>3.0.1u2</version.findbugs.annotations>
