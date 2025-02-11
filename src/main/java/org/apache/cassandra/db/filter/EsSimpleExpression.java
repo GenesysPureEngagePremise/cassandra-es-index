@@ -6,7 +6,7 @@ import org.apache.cassandra.db.rows.Row;
 import org.apache.cassandra.schema.TableMetadata;
 
 public class EsSimpleExpression extends RowFilter.SimpleExpression {
-  private Expression original;
+  private final Expression original;
 
   public EsSimpleExpression(Expression expression) {
     super(expression.column, expression.operator, expression.value);
